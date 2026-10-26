@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11-1 长度单位</title>
+<style>
+    /* ===== 全局重置 ===== */
+    *{ margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root{
+        --brand:        #2f8f8c;
+        --brand-soft:   #f1fafa;
+        --ink:          #26343d;
+        --ink-soft:     #5b6b75;
+        --ink-mute:     #93a2ab;
+        --line:         #e6ecf0;
+        --card:         #ffffff;
+        --radius:       14px;
+        --shadow:       0 2px 14px rgba(20, 55, 70, .07);
+    }
+
+    html{ font-size: 16px; }   /* rem 的基准，显式写出来便于对照 */
+
+    body{
+        font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+        font-size: 15px;
+        line-height: 1.7;
+        color: var(--ink);
+        background: linear-gradient(180deg, #eef5f7 0%, #f7fafb 320px, #f7fafb 100%);
+        padding: 0 20px 56px;
+    }
+
+    .wan_wrap{ max-width: 920px; margin: 0 auto; }
+
+    /* ===== 页头 ===== */
+    .wan_hero{
+        background: linear-gradient(135deg, #2f8f8c 0%, #40c9c6 55%, #6ed7c9 100%);
+        color: #fff;
+        border-radius: 18px;
+        padding: 26px 30px;
+        margin: 26px 0 24px;
+        box-shadow: 0 10px 26px rgba(47, 143, 140, .22);
+    }
+    .wan_hero h1{
+        font-size: 25px;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+    .wan_hero .wan_sub{
+        font-size: 13.5px;
+        opacity: .92;
+        margin-top: 4px;
+    }
+    .wan_chips{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+    }
+    .wan_chip{
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255,255,255,.2);
+        border: 1px solid rgba(255,255,255,.38);
+        border-radius: 999px;
+        padding: 4px 14px;
+        font-size: 13.5px;
+    }
+    .wan_chip b{ font-weight: 600; opacity: .82; }
+    .wan_chip span{ font-weight: 700; letter-spacing: .5px; }
+
+    /* ===== 卡片 ===== */
+    .wan_card{
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 20px 24px 24px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow);
+    }
+    .wan_card > h2{
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 17px;
+        font-weight: 700;
+        padding-bottom: 12px;
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--line);
+    }
+    .wan_card > h2 .wan_num{
+        flex: none;
+        width: 24px; height: 24px;
+        border-radius: 8px;
+        background: var(--brand-soft);
+        color: var(--brand);
+        font-size: 13px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .wan_tip{
+        font-size: 13.5px;
+        color: var(--ink-mute);
+        margin-bottom: 14px;
+    }
+    .wan_tip b{ color: var(--ink-soft); }
+    .wan_tip code{
+        background: #f2f6f8;
+        color: var(--brand);
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-family: Consolas, Monaco, monospace;
+        font-size: 12.5px;
+    }
+
+    /* ===== 速查表 ===== */
+    .wan_table-scroll{ overflow-x: auto; }
+    table{
+        width: 100%;
+        min-width: 540px;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+        font-size: 14px;
+    }
+    thead th{
+        background: #eaf5f6;
+        color: #26706e;
+        font-weight: 700;
+        text-align: left;
+        padding: 12px 16px;
+        font-size: 13.5px;
+        letter-spacing: .5px;
+        border-bottom: 1px solid var(--line);
+    }
+    tbody td{
+        padding: 11px 16px;
+        border-bottom: 1px solid #f1f5f7;
+        background: #fff;
+        vertical-align: middle;
+    }
+    tbody tr:last-child td{ border-bottom: none; }
+    tbody tr:hover td{ background: #fbfdfe; }
+
+    /* 两个分组列：绝对单位 / 相对单位 */
+    td.wan_cat{
+        font-weight: 700;
+        font-size: 13.5px;
+        width: 118px;
+        text-align: center;
+        line-height: 1.5;
+    }
+    td.wan_cat.wan_abs{ background: #f2f8f9; color: #3a7f92; }
+    td.wan_cat.wan_rel{ background: #f8f5fd; color: #7059b8; }
+    td.wan_cat small{ display: block; font-weight: 400; font-size: 12px; color: var(--ink-mute); }
+
+    td code{
+        display: inline-block;
+        font-family: Consolas, Monaco, monospace;
+        font-size: 13px;
+        font-weight: 700;
+        color: #d94a3d;
+        background: #fdf1ef;
+        border-radius: 5px;
+        padding: 1px 7px;
+    }
+    tr.wan_rel-row td code{ color: #7059b8; background: #f5f1fd; }
+
+    /* ===== 演示区通用 ===== */
+    .wan_stage{
+        background: #fbfdfe;
+        border: 1px dashed #cfdde3;
+        border-radius: 12px;
+        padding: 16px;
+    }
+    .wan_row{
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 12px;
+    }
+    .wan_row:last-child{ margin-bottom: 0; }
+    .wan_note{
+        font-family: Consolas, Monaco, monospace;
+        font-size: 12.5px;
+        color: var(--ink-soft);
+        white-space: nowrap;
+    }
+
+    /* 块内统一：内容居中、自适应高度，绝不挤压文字 */
+    .wan_box{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 0 14px;
+        min-height: 58px;
+        border-radius: 9px;
+        color: #fff;
+        font-size: 13.5px;
+        font-weight: 600;
+    }
+
+    /* ===== 1. px ===== */
+    .wan_px-100{ width: 100px; height: 60px; background: linear-gradient(135deg, #ff7b6b, #e8503c); }
+    .wan_px-200{ width: 200px; height: 60px; background: linear-gradient(135deg, #5fcfcb, #2f8f8c); }
+
+    /* ===== 2. % ===== */
+    .wan_parent{
+        width: 100%;
+        max-width: 600px;
+        border: 1px dashed #b9cdd6;
+        border-radius: 10px;
+        padding: 12px;
+        background: #fff;
+    }
+    .wan_parent-label{
+        font-family: Consolas, Monaco, monospace;
+        font-size: 12.5px;
+        color: var(--ink-mute);
+        margin-bottom: 8px;
+    }
+    .wan_pct-50{
+        width: 50%; height: 52px;
+        background: linear-gradient(135deg, #ffd45e, #f0a92c);
+        color: #6a4a05;
+        margin-bottom: 8px;
+    }
+    .wan_pct-100{ width: 100%; height: 52px; background: linear-gradient(135deg, #8fd3b6, #4aa881); }
+
+    /* ===== 3. em / rem ===== */
+    .wan_em-parent{
+        font-size: 20px;                 /* em 的参照：当前元素字号 */
+        border: 1px solid #d6c9f5;
+        border-radius: 10px;
+        padding: 12px 14px 14px;
+        background: #fdfcff;
+    }
+    .wan_em-parent > .wan_parent-label{ margin-bottom: 10px; color: #7059b8; }
+
+    /* em：字号 = 父级 20px × 2 = 40px，宽 = 自身字号 × 10 = 400px */
+    .wan_em-child{
+        font-size: 2em;
+        width: min(10em, 100%);
+        min-height: 80px;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, #b9a3f0, #8a6ee0);
+        justify-content: flex-start;
+    }
+    /* rem：字号 = html 16px × 2 = 32px，宽 = 16px × 20 = 320px，不受父级字号影响 */
+    .wan_rem-child{
+        font-size: 2rem;
+        width: min(20rem, 100%);
+        min-height: 74px;
+        background: linear-gradient(135deg, #ffd27a, #f0a92c);
+        color: #6a4a05;
+        justify-content: flex-start;
+    }
+    /* 块内文字：强制回落到小号，避免跟着父级字号一起变大导致溢出 */
+    .wan_box .wan_spec{
+        font-family: Consolas, Monaco, monospace;
+        font-size: 12.5px;
+        font-weight: 600;
+        line-height: 1.5;
+    }
+    /* 字号样本：故意用 1em，直观显示实际渲染出的字号 */
+    .wan_box .wan_sample{
+        flex: none;
+        font-size: 1em;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .wan_legend{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 18px;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px dashed #e2e9ee;
+        font-size: 13px;
+        color: var(--ink-soft);
+    }
+    .wan_legend i{
+        display: inline-block;
+        width: 10px; height: 10px;
+        border-radius: 3px;
+        margin-right: 6px;
+        vertical-align: -1px;
+    }
+
+    /* ===== 4. vw / vh ===== */
+    .wan_viewport-live{
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--ink-soft);
+        background: #eef7f8;
+        border: 1px solid #d8ebee;
+        border-radius: 999px;
+        padding: 5px 14px;
+        margin-bottom: 14px;
+    }
+    .wan_viewport-live b{
+        font-family: Consolas, Monaco, monospace;
+        color: var(--brand);
+        font-size: 13.5px;
+    }
+    .wan_vw-box{
+        width: 50vw;
+        max-width: 100%;
+        min-height: 60px;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #6cb6d9, #2f86a6);
+        justify-content: flex-start;
+    }
+    .wan_vh-box{
+        width: min(300px, 100%);
+        height: 10vh;
+        min-height: 58px;   /* 兜底，窄屏/小窗口下也不会挤掉文字 */
+        background: linear-gradient(135deg, #f08a8a, #d9453a);
+        justify-content: flex-start;
+    }
+
+    /* ===== 底部要点 ===== */
+    .wan_keypoints{
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 10px 18px;
+    }
+    .wan_keypoints li{
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        font-size: 14px;
+        color: var(--ink-soft);
+        background: #fbfdfe;
+        border: 1px solid #eef4f6;
+        border-radius: 10px;
+        padding: 11px 14px;
+    }
+    .wan_keypoints li b{
+        color: var(--ink);
+        font-weight: 700;
+        font-family: Consolas, Monaco, monospace;
+        font-size: 13px;
+    }
+    .wan_keypoints .wan_dot{
+        flex: none;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        margin-top: 7px;
+    }
+
+    /* ===== 小屏适配 ===== */
+    @media (max-width: 640px){
+        body{ padding: 0 14px 40px; }
+        .wan_hero{ padding: 20px 18px; border-radius: 14px; }
+        .wan_hero h1{ font-size: 20px; }
+        .wan_card{ padding: 16px 16px 20px; }
+        .wan_row{ flex-wrap: wrap; gap: 8px 12px; }
+        .wan_note{ white-space: normal; }
+        .wan_vw-box{ width: 100%; }
+        .wan_box{ padding: 0 10px; }
+    }
+</style>
+</head>
+<body>
+<div class="wan_wrap">
+
+    <!-- ===== 页头 ===== -->
+    <header class="wan_hero">
+        <h1>CSS 长度单位</h1>
+        <p class="wan_sub">《高级网页设计》 · 长度单位（绝对单位 / 相对单位）</p>
+        <div class="wan_chips">
+            <span class="wan_chip"><b>学号</b><span>412</span></span>
+            <span class="wan_chip"><b>姓名</b><span>万逸泽</span></span>
+            <span class="wan_chip"><b>班级</b><span>计算机24004</span></span>
+        </div>
+    </header>
+
+    <!-- ===== 一、速查表 ===== -->
+    <section class="wan_card">
+        <h2><span class="wan_num">一</span>常见长度单位速查表</h2>
+        <div class="wan_table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>分类</th>
+                        <th>单位</th>
+                        <th>含义</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="wan_cat wan_abs" rowspan="4">绝对单位<small>固定值</small></td>
+                        <td><code>px</code></td>
+                        <td>像素，最常用，页面上唯一“所见即所得”的单位</td>
+                    </tr>
+                    <tr>
+                        <td><code>cm / mm / in</code></td>
+                        <td>厘米 / 毫米 / 英寸（1in = 96px），打印时用</td>
+                    </tr>
+                    <tr>
+                        <td><code>pt</code></td>
+                        <td>磅，1pt = 1/72 英寸，常用于字体大小</td>
+                    </tr>
+                    <tr>
+                        <td><code>pc</code></td>
+                        <td>派卡，1pc = 12pt</td>
+                    </tr>
+                    <tr class="wan_rel-row">
+                        <td class="wan_cat wan_rel" rowspan="5">相对单位<small>随参照物变化</small></td>
+                        <td><code>%</code></td>
+                        <td>相对于【父元素】的对应尺寸</td>
+                    </tr>
+                    <tr class="wan_rel-row">
+                        <td><code>em</code></td>
+                        <td>相对于【当前元素】的 font-size，会层层相乘</td>
+                    </tr>
+                    <tr class="wan_rel-row">
+                        <td><code>rem</code></td>
+                        <td>相对于【根元素 html】的 font-size，只算一次</td>
+                    </tr>
+                    <tr class="wan_rel-row">
+                        <td><code>vw / vh</code></td>
+                        <td>视口（浏览器窗口）宽度 / 高度的 1%</td>
+                    </tr>
+                    <tr class="wan_rel-row">
+                        <td><code>vmin / vmax</code></td>
+                        <td>视口宽高中【较小 / 较大】者的 1%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== 二、px ===== -->
+    <section class="wan_card">
+        <h2><span class="wan_num">二</span>绝对单位：px</h2>
+        <p class="wan_tip">固定大小，不随父元素、字体、浏览器窗口变化。</p>
+        <div class="wan_stage">
+            <div class="wan_row">
+                <div class="wan_box wan_px-100"></div>
+                <span class="wan_note">width: 100px; height: 60px</span>
+            </div>
+            <div class="wan_row">
+                <div class="wan_box wan_px-200"></div>
+                <span class="wan_note">width: 200px; height: 60px</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 三、% ===== -->
+    <section class="wan_card">
+        <h2><span class="wan_num">三</span>相对单位：%</h2>
+        <p class="wan_tip">百分比相对<b>父元素</b>的对应尺寸计算：父元素宽 600px，子元素 50% 就是 300px。</p>
+        <div class="wan_stage">
+            <div class="wan_parent">
+                <div class="wan_parent-label">父元素：max-width 600px</div>
+                <div class="wan_box wan_pct-50">width: 50%</div>
+                <div class="wan_box wan_pct-100">width: 100%</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 四、em 与 rem ===== -->
+    <section class="wan_card">
+        <h2><span class="wan_num">四</span>相对单位：em 与 rem</h2>
+        <p class="wan_tip"><code>em</code> 相对当前元素的字号（会层层相乘），<code>rem</code> 只相对根元素 <code>html</code> 的字号（只算一次）。</p>
+        <div class="wan_stage">
+            <div class="wan_em-parent">
+                <div class="wan_parent-label">父元素 font-size: 20px</div>
+
+                <div class="wan_box wan_em-child">
+                    <span class="wan_sample">Aa</span>
+                    <span class="wan_spec">em<br>font-size: 2em → 40px<br>width: 10em → 400px</span>
+                </div>
+
+                <div class="wan_box wan_rem-child">
+                    <span class="wan_sample">Aa</span>
+                    <span class="wan_spec">rem<br>font-size: 2rem → 32px<br>width: 20rem → 320px</span>
+                </div>
+            </div>
+        </div>
+        <div class="wan_legend">
+            <span><i style="background:#8a6ee0"></i>em 色块：字号 40px，宽度按自身字号算</span>
+            <span><i style="background:#f0a92c"></i>rem 色块：只按 html 的 16px 算，父元素改成 20px 也不受影响</span>
+        </div>
+    </section>
+
+    <!-- ===== 五、vw / vh ===== -->
+    <section class="wan_card">
+        <h2><span class="wan_num">五</span>视口单位：vw / vh</h2>
+        <p class="wan_tip">拖动浏览器窗口大小，下面两个色块会跟着变化。</p>
+        <div class="wan_viewport-live">当前视口：<b id="wan_vwVal">—</b> × <b id="wan_vhVal">—</b> px</div>
+        <div class="wan_stage">
+            <div class="wan_box wan_vw-box"><span class="wan_spec">width: 50vw（视口宽度的一半）</span></div>
+            <div class="wan_box wan_vh-box"><span class="wan_spec">height: 10vh（视口高度的 10%）</span></div>
+        </div>
+    </section>
+
+    <!-- ===== 六、要点 ===== -->
+    <section class="wan_card">
+        <h2><span class="wan_num">六</span>课堂要点</h2>
+        <ul class="wan_keypoints">
+            <li><span class="wan_dot" style="background:#e8503c"></span><span><b>px</b>　用于需要精确控制的固定布局</span></li>
+            <li><span class="wan_dot" style="background:#f0a92c"></span><span><b>%</b>　用于随父容器伸缩的响应式宽度</span></li>
+            <li><span class="wan_dot" style="background:#8a6ee0"></span><span><b>rem</b>　用于字号与整体缩放（避免 em 层层相乘）</span></li>
+            <li><span class="wan_dot" style="background:#2f86a6"></span><span><b>vw / vh</b>　用于大屏通栏、整屏高度区块</span></li>
+        </ul>
+    </section>
+
+</div>
+
+<script>
+    /* 实时显示视口尺寸，配合 vw / vh 演示 */
+    (function () {
+        var wan_vw = document.getElementById('wan_vwVal');
+        var wan_vh = document.getElementById('wan_vhVal');
+        function wan_update() {
+            wan_vw.textContent = window.innerWidth;
+            wan_vh.textContent = window.innerHeight;
+        }
+        wan_update();
+        window.addEventListener('resize', wan_update);
+    })();
+</script>
+</body>
+</html>

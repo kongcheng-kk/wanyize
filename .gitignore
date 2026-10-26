@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+vendor/
+.venv/
+__pycache__/
+
+# build output
+dist/
+build/
+out/
+*.log
+
+# env & secrets (never commit)
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.*
+
+# editor & tooling
+.idea/
+.vscode/
+.workbuddy/
+.DS_Store
+Thumbs.db
