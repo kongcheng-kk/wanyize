@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  文件：15-2.html
+  作者：万逸泽（学号 24001010412）
+  建立时间：2026-10-26 14:44
+  使用的大模型：deepseek-v4.1-flash
+  提示词：
+    完成15-2html，展示javascript程序结构，循坏，条件，然后提交到github
+  说明：演示 JavaScript 的三种基本控制结构 —— 顺序、条件、循环
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>15-2 JavaScript 程序结构 · 顺序 · 条件 · 循环</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f4f5f7;
+      color: #24292f;
+      line-height: 1.7;
+      padding: 36px 18px 64px;
+    }
+
+    .wan_wrap { max-width: 880px; margin: 0 auto; }
+
+    /* ---------- 头部 ---------- */
+    .wan_hero {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed 55%, #db2777);
+      color: #fff;
+      border-radius: 18px;
+      padding: 30px 32px 28px;
+      box-shadow: 0 12px 28px -10px rgba(79, 70, 229, .5);
+      position: relative;
+      overflow: hidden;
+    }
+    .wan_hero::after {
+      content: "{ }";
+      position: absolute;
+      right: 24px; top: 6px;
+      font: 700 96px/1 Consolas, monospace;
+      color: rgba(255, 255, 255, .13);
+      pointer-events: none;
+    }
+    .wan_hero h1 { font-size: 26px; letter-spacing: .5px; }
+    .wan_hero p { font-size: 14px; opacity: .9; margin-top: 6px; }
+    .wan_home {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .18);
+      border: 1px solid rgba(255, 255, 255, .38);
+      color: #fff;
+      font-size: 13px;
+      text-decoration: none;
+      transition: background .2s;
+    }
+    .wan_home:hover { background: rgba(255, 255, 255, .32); }
+
+    /* ---------- 卡片 ---------- */
+    .wan_card {
+      background: #fff;
+      border: 1px solid #eef0f3;
+      border-radius: 14px;
+      padding: 24px 26px 26px;
+      margin-top: 18px;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 10px 30px -22px rgba(16, 24, 40, .5);
+    }
+    .wan_card h2 {
+      font-size: 18px;
+      padding-left: 12px;
+      border-left: 4px solid #4f46e5;
+      line-height: 1.4;
+    }
+    .wan_card h3 {
+      font-size: 15px;
+      color: #312e81;
+      margin: 24px 0 10px;
+    }
+    .wan_card h3 .wan_tag {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 1px 8px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4338ca;
+      font-size: 11.5px;
+      font-weight: 400;
+      vertical-align: 2px;
+    }
+    .wan_desc { font-size: 13.5px; color: #667085; margin-top: 6px; }
+
+    /* ---------- 代码块 ---------- */
+    .wan_code {
+      background: #101828;
+      color: #e4e7ec;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.85;
+      padding: 14px 8px;
+      border-radius: 10px;
+      overflow-x: auto;
+      margin: 12px 0;
+    }
+    .wan_ln {
+      display: block;
+      padding: 0 8px;
+      border-radius: 4px;
+      transition: background .25s;
+      white-space: pre;
+    }
+    .wan_ln.wan_active { background: rgba(124, 58, 237, .5); }
+    .wan_kw { color: #c792ea; }
+    .wan_num { color: #f78c6c; }
+    .wan_str { color: #c3e88d; }
+    .wan_cmt { color: #6b7a90; }
+    .wan_fn { color: #82aaff; }
+
+    /* ---------- 控件 ---------- */
+    .wan_row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin: 14px 0 12px;
+    }
+    .wan_row label { font-size: 13.5px; color: #475467; }
+    .wan_btn {
+      padding: 8px 18px;
+      border: 0;
+      border-radius: 8px;
+      background: #4f46e5;
+      color: #fff;
+      font-size: 13.5px;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 6px 14px -8px rgba(79, 70, 229, .9);
+      transition: background .18s;
+    }
+    .wan_btn:hover { background: #4338ca; }
+    .wan_btn:active { transform: translateY(1px); }
+    .wan_input, .wan_select {
+      padding: 7px 12px;
+      border: 1px solid #d0d5dd;
+      border-radius: 8px;
+      background: #fff;
+      color: #24292f;
+      font-family: inherit;
+      font-size: 14px;
+      width: 120px;
+    }
+    .wan_input:focus, .wan_select:focus {
+      outline: 2px solid #c7d2fe;
+      border-color: #6366f1;
+    }
+
+    /* ---------- 输出控制台 ---------- */
+    .wan_out {
+      background: #0b1220;
+      color: #a6f4c5;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.9;
+      border-radius: 10px;
+      padding: 12px 14px;
+      min-height: 44px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+    .wan_line { white-space: pre-wrap; word-break: break-word; }
+    .wan_line::before { content: "› "; color: #475569; }
+    .wan_line.wan_ok { color: #7ee787; }
+    .wan_line.wan_ok::before { content: "✓ "; color: #34d399; }
+    .wan_line.wan_err { color: #fca5a5; }
+    .wan_line.wan_err::before { content: "✕ "; color: #f87171; }
+    .wan_line.wan_mute { color: #7d8ba1; }
+    .wan_line.wan_mute::before { color: #334155; }
+
+    /* 九九乘法表用的浅色容器 */
+    .wan_out_light {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+    .wan_mul_row { display: flex; gap: 6px; margin-bottom: 6px; }
+    .wan_mul_row:last-child { margin-bottom: 0; }
+    .wan_mul_cell {
+      min-width: 66px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-family: Consolas, monospace;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    /* ---------- 三种结构示意图 ---------- */
+    .wan_flow {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .wan_flow_item {
+      background: #fcfcfd;
+      border: 1px solid #eef0f3;
+      border-radius: 12px;
+      padding: 16px 12px 14px;
+      text-align: center;
+    }
+    .wan_flow_item svg { display: block; margin: 0 auto 8px; }
+    .wan_flow_item b { font-size: 14px; }
+    .wan_flow_item p { font-size: 12.5px; color: #667085; margin-top: 4px; }
+
+    /* ---------- 小结表格 ---------- */
+    .wan_table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      margin-top: 12px;
+    }
+    .wan_table th, .wan_table td {
+      border: 1px solid #e6e8ec;
+      padding: 9px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .wan_table thead th { background: #f7f8fa; font-weight: 600; }
+    .wan_table tbody tr:nth-child(even) { background: #fcfcfd; }
+    .wan_table code {
+      font-family: Consolas, monospace;
+      background: #eef2ff;
+      color: #4338ca;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 12.5px;
+    }
+
+    .wan_note {
+      font-size: 12.5px;
+      color: #8a94a6;
+      margin-top: 10px;
+      padding-left: 12px;
+      border-left: 3px solid #e5e7eb;
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 22px 12px 48px; }
+      .wan_hero { padding: 22px 20px; }
+      .wan_hero h1 { font-size: 21px; }
+      .wan_hero::after { font-size: 64px; right: 12px; }
+      .wan_card { padding: 20px 16px 22px; }
+      .wan_flow { grid-template-columns: 1fr; }
+      .wan_input, .wan_select { width: 104px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wan_wrap">
+
+  <!-- ================= 头部 ================= -->
+  <header class="wan_hero">
+    <h1>JavaScript 程序结构</h1>
+    <p>顺序结构 · 条件结构 · 循环结构 —— 任何复杂程序都由这三种基本结构组合而成</p>
+    <a class="wan_home" href="index.html">← 返回首页</a>
+  </header>
+
+  <!-- ================= 一、总览 ================= -->
+  <section class="wan_card">
+    <h2>一、三种基本结构</h2>
+    <p class="wan_desc">1966 年 Böhm 与 Jacopini 证明：任何算法都可以只用这三种结构表达，这就是「结构化程序设计」的基础。</p>
+
+    <div class="wan_flow">
+      <div class="wan_flow_item">
+        <svg viewBox="0 0 120 90" width="110" height="82" aria-hidden="true">
+          <rect x="30" y="8" width="60" height="16" rx="4" fill="#eef2ff" stroke="#6366f1" stroke-width="1.2"/>
+          <rect x="30" y="37" width="60" height="16" rx="4" fill="#eef2ff" stroke="#6366f1" stroke-width="1.2"/>
+          <rect x="30" y="66" width="60" height="16" rx="4" fill="#eef2ff" stroke="#6366f1" stroke-width="1.2"/>
+          <line x1="60" y1="24" x2="60" y2="36" stroke="#6366f1" stroke-width="1.5"/>
+          <polygon points="60,38 56,31 64,31" fill="#6366f1"/>
+          <line x1="60" y1="53" x2="60" y2="65" stroke="#6366f1" stroke-width="1.5"/>
+          <polygon points="60,67 56,60 64,60" fill="#6366f1"/>
+        </svg>
+        <b>顺序结构</b>
+        <p>自上而下，逐条执行</p>
+      </div>
+
+      <div class="wan_flow_item">
+        <svg viewBox="0 0 120 90" width="110" height="82" aria-hidden="true">
+          <polygon points="60,8 96,30 60,52 24,30" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.2"/>
+          <path d="M60 52 V63" stroke="#f59e0b" stroke-width="1.5"/>
+          <path d="M60 63 H30 V69 M60 63 H90 V69" stroke="#f59e0b" stroke-width="1.5" fill="none"/>
+          <rect x="12" y="69" width="36" height="16" rx="4" fill="#fff7ed" stroke="#f59e0b" stroke-width="1.2"/>
+          <rect x="72" y="69" width="36" height="16" rx="4" fill="#fff7ed" stroke="#f59e0b" stroke-width="1.2"/>
+        </svg>
+        <b>条件结构</b>
+        <p>判断真假，选择一条分支</p>
+      </div>
+
+      <div class="wan_flow_item">
+        <svg viewBox="0 0 120 90" width="110" height="82" aria-hidden="true">
+          <rect x="38" y="32" width="44" height="26" rx="5" fill="#dcfce7" stroke="#22c55e" stroke-width="1.2"/>
+          <path d="M94 45 A34 34 0 0 0 26 45" fill="none" stroke="#22c55e" stroke-width="1.5"/>
+          <polygon points="26,51 21,43 31,43" fill="#22c55e"/>
+        </svg>
+        <b>循环结构</b>
+        <p>条件成立时，重复执行</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 二、顺序结构 ================= -->
+  <section class="wan_card">
+    <h2>二、顺序结构</h2>
+    <p class="wan_desc">代码从上到下一条一条执行，上一条的结果会被下一条用到。这是默认的执行方式，不需要任何关键字。</p>
+
+    <h3>示例：三步计算 <span class="wan_tag">逐行高亮</span></h3>
+    <pre class="wan_code"><code id="wan_code_seq"><span class="wan_ln"><span class="wan_kw">var</span> wan_a = <span class="wan_num">1</span>;                    <span class="wan_cmt">// 第 1 行</span></span>
+<span class="wan_ln"><span class="wan_kw">var</span> wan_b = wan_a + <span class="wan_num">2</span>;          <span class="wan_cmt">// 第 2 行，用到上一行的结果</span></span>
+<span class="wan_ln"><span class="wan_kw">var</span> wan_c = wan_a + wan_b;    <span class="wan_cmt">// 第 3 行，用到前两行的结果</span></span>
+<span class="wan_ln">console.<span class="wan_fn">log</span>(wan_a, wan_b, wan_c);  <span class="wan_cmt">// 输出 1 3 4</span></span></code></pre>
+
+    <div class="wan_row">
+      <button class="wan_btn" id="wan_btn_seq" type="button">▶ 逐步执行</button>
+    </div>
+    <div class="wan_out" id="wan_out_seq"><div class="wan_line wan_mute">点击上方按钮，观察代码逐行高亮与结果输出</div></div>
+  </section>
+
+  <!-- ================= 三、条件结构 ================= -->
+  <section class="wan_card">
+    <h2>三、条件结构</h2>
+    <p class="wan_desc">先判断条件表达式的真假，再决定执行哪一条分支。同一时刻只会走其中一条路。</p>
+
+    <h3>1. if / else if / else —— 成绩等级判定 <span class="wan_tag">多分支</span></h3>
+    <pre class="wan_code"><code><span class="wan_kw">if</span> (wan_score &gt;= <span class="wan_num">90</span>) {
+  wan_level = <span class="wan_str">"A"</span>;
+} <span class="wan_kw">else if</span> (wan_score &gt;= <span class="wan_num">80</span>) {
+  wan_level = <span class="wan_str">"B"</span>;
+} <span class="wan_kw">else if</span> (wan_score &gt;= <span class="wan_num">60</span>) {
+  wan_level = <span class="wan_str">"C"</span>;
+} <span class="wan_kw">else</span> {
+  wan_level = <span class="wan_str">"D"</span>;
+}</code></pre>
+
+    <div class="wan_row">
+      <label for="wan_score">分数：</label>
+      <input class="wan_input" id="wan_score" type="number" value="86" min="0" max="100">
+      <button class="wan_btn" id="wan_btn_grade" type="button">判定等级</button>
+    </div>
+    <div class="wan_out" id="wan_out_grade"></div>
+    <p class="wan_note">注意：<code>else if</code> 是从上往下依次判断，一旦某个条件成立，后面的分支就不再判断了。</p>
+
+    <h3>2. switch —— 星期名称 <span class="wan_tag">等值匹配</span></h3>
+    <pre class="wan_code"><code><span class="wan_kw">switch</span> (wan_day) {
+  <span class="wan_kw">case</span> <span class="wan_num">1</span>: wan_name = <span class="wan_str">"星期一"</span>; <span class="wan_kw">break</span>;
+  <span class="wan_kw">case</span> <span class="wan_num">2</span>: wan_name = <span class="wan_str">"星期二"</span>; <span class="wan_kw">break</span>;
+  <span class="wan_cmt">// …… 一直到 case 7</span>
+  <span class="wan_kw">default</span>: wan_name = <span class="wan_str">"无效的星期"</span>;
+}</code></pre>
+
+    <div class="wan_row">
+      <label for="wan_day">选择：</label>
+      <select class="wan_select" id="wan_day">
+        <option value="1">1 星期一</option>
+        <option value="2">2 星期二</option>
+        <option value="3">3 星期三</option>
+        <option value="4">4 星期四</option>
+        <option value="5">5 星期五</option>
+        <option value="6">6 星期六</option>
+        <option value="7">7 星期日</option>
+        <option value="9">9 不存在</option>
+      </select>
+      <button class="wan_btn" id="wan_btn_switch" type="button">匹配 case</button>
+    </div>
+    <div class="wan_out" id="wan_out_switch"></div>
+    <p class="wan_note">每个 <code>case</code> 末尾必须写 <code>break</code>，否则会「穿透」继续执行下一个 case。</p>
+
+    <h3>3. 三元运算符 —— 判断奇偶 <span class="wan_tag">简写 if…else</span></h3>
+    <pre class="wan_code"><code><span class="wan_kw">var</span> wan_result = (wan_n % <span class="wan_num">2</span> === <span class="wan_num">0</span>) ? <span class="wan_str">"偶数"</span> : <span class="wan_str">"奇数"</span>;</code></pre>
+
+    <div class="wan_row">
+      <label for="wan_n">整数：</label>
+      <input class="wan_input" id="wan_n" type="number" value="7">
+      <button class="wan_btn" id="wan_btn_ternary" type="button">判断奇偶</button>
+    </div>
+    <div class="wan_out" id="wan_out_ternary"></div>
+  </section>
+
+  <!-- ================= 四、循环结构 ================= -->
+  <section class="wan_card">
+    <h2>四、循环结构</h2>
+    <p class="wan_desc">让同一段代码重复执行，直到条件不再成立。循环由「初始化 → 判断条件 → 执行循环体 → 更新变量」四步组成。</p>
+
+    <h3>1. for —— 从 1 加到 n <span class="wan_tag">次数已知</span></h3>
+    <pre class="wan_code"><code><span class="wan_kw">var</span> wan_sum = <span class="wan_num">0</span>;
+<span class="wan_kw">for</span> (<span class="wan_kw">var</span> wan_i = <span class="wan_num">1</span>; wan_i &lt;= wan_n; wan_i++) {
+  wan_sum += wan_i;
+}
+console.<span class="wan_fn">log</span>(wan_sum);</code></pre>
+
+    <div class="wan_row">
+      <label for="wan_n_for">n =</label>
+      <input class="wan_input" id="wan_n_for" type="number" value="10" min="1" max="1000">
+      <button class="wan_btn" id="wan_btn_for" type="button">计算累加</button>
+    </div>
+    <div class="wan_out" id="wan_out_for"></div>
+
+    <h3>2. while —— 2 的幂序列 <span class="wan_tag">次数未知</span></h3>
+    <pre class="wan_code"><code><span class="wan_kw">var</span> wan_v = <span class="wan_num">1</span>;
+<span class="wan_kw">while</span> (wan_v &lt;= <span class="wan_num">1000</span>) {
+  wan_v *= <span class="wan_num">2</span>;   <span class="wan_cmt">// 1 → 2 → 4 → …… → 1024</span>
+}</code></pre>
+
+    <div class="wan_row">
+      <button class="wan_btn" id="wan_btn_while" type="button">执行 while</button>
+    </div>
+    <div class="wan_out" id="wan_out_while"></div>
+
+    <h3>3. do…while —— 至少执行一次 <span class="wan_tag">先执行后判断</span></h3>
+    <pre class="wan_code"><code><span class="wan_kw">var</span> wan_j = <span class="wan_num">10</span>;
+<span class="wan_kw">do</span> {
+  wan_count++;          <span class="wan_cmt">// 先执行一次，再去判断条件</span>
+} <span class="wan_kw">while</span> (wan_j &lt; <span class="wan_num">5</span>);</code></pre>
+
+    <div class="wan_row">
+      <button class="wan_btn" id="wan_btn_dowhile" type="button">对比 while 与 do…while</button>
+    </div>
+    <div class="wan_out" id="wan_out_dowhile"></div>
+
+    <h3>4. for…of —— 遍历数组 <span class="wan_tag">取值遍历</span></h3>
+    <pre class="wan_code"><code><span class="wan_kw">var</span> wan_fruits = [<span class="wan_str">"苹果"</span>, <span class="wan_str">"香蕉"</span>, <span class="wan_str">"橙子"</span>, <span class="wan_str">"葡萄"</span>];
+<span class="wan_kw">for</span> (<span class="wan_kw">var</span> wan_item <span class="wan_kw">of</span> wan_fruits) {
+  console.<span class="wan_fn">log</span>(wan_item);
+}</code></pre>
+
+    <div class="wan_row">
+      <button class="wan_btn" id="wan_btn_forof" type="button">遍历数组</button>
+    </div>
+    <div class="wan_out" id="wan_out_forof"></div>
+
+    <h3>5. break / continue —— 提前结束与跳过 <span class="wan_tag">流程控制</span></h3>
+    <pre class="wan_code"><code><span class="wan_kw">for</span> (<span class="wan_kw">var</span> wan_i = <span class="wan_num">1</span>; wan_i &lt;= <span class="wan_num">20</span>; wan_i++) {
+  <span class="wan_kw">if</span> (wan_i &gt; <span class="wan_num">17</span>) <span class="wan_kw">break</span>;               <span class="wan_cmt">// 超过 17 提前结束整个循环</span>
+  <span class="wan_kw">if</span> (wan_i % <span class="wan_num">3</span> === <span class="wan_num">0</span>) <span class="wan_kw">continue</span>;     <span class="wan_cmt">// 跳过本次，进入下一次</span>
+  wan_list.<span class="wan_fn">push</span>(wan_i);
+}</code></pre>
+
+    <div class="wan_row">
+      <button class="wan_btn" id="wan_btn_jump" type="button">执行 break / continue</button>
+    </div>
+    <div class="wan_out" id="wan_out_jump"></div>
+
+    <h3>6. 嵌套 for —— 九九乘法表 <span class="wan_tag">循环套循环</span></h3>
+    <pre class="wan_code"><code><span class="wan_kw">for</span> (<span class="wan_kw">var</span> wan_i = <span class="wan_num">1</span>; wan_i &lt;= <span class="wan_num">9</span>; wan_i++) {        <span class="wan_cmt">// 外层：控制行</span>
+  <span class="wan_kw">for</span> (<span class="wan_kw">var</span> wan_j = <span class="wan_num">1</span>; wan_j &lt;= wan_i; wan_j++) {    <span class="wan_cmt">// 内层：控制列</span>
+    <span class="wan_cmt">// 输出 wan_j × wan_i = wan_i * wan_j</span>
+  }
+}</code></pre>
+
+    <div class="wan_row">
+      <button class="wan_btn" id="wan_btn_mul" type="button">生成乘法表</button>
+    </div>
+    <div class="wan_out_light" id="wan_out_mul"></div>
+    <p class="wan_note">外层循环每走 1 步，内层循环就要完整跑完一遍，所以总执行次数是两层次数相乘。</p>
+  </section>
+
+  <!-- ================= 五、小结 ================= -->
+  <section class="wan_card">
+    <h2>五、小结</h2>
+    <table class="wan_table">
+      <thead>
+        <tr>
+          <th style="width: 16%">结构</th>
+          <th style="width: 30%">常用关键字</th>
+          <th style="width: 28%">执行特点</th>
+          <th>典型场景</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>顺序</b></td>
+          <td>（无需关键字）</td>
+          <td>自上而下逐条执行</td>
+          <td>赋值、计算、输出</td>
+        </tr>
+        <tr>
+          <td><b>条件</b></td>
+          <td><code>if</code> <code>else if</code> <code>else</code> <code>switch</code> <code>?:</code></td>
+          <td>只走其中一条分支</td>
+          <td>等级判定、菜单分发、默认值</td>
+        </tr>
+        <tr>
+          <td><b>循环</b></td>
+          <td><code>for</code> <code>while</code> <code>do…while</code> <code>for…of</code></td>
+          <td>条件成立就重复执行</td>
+          <td>累加、遍历、批量生成</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="wan_note">三种结构可以任意嵌套：循环里可以写条件（如 break 判断），条件分支里也可以写循环。这正是程序能处理复杂逻辑的原因。</p>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------------- 通用小工具 ---------------- */
+  function wan_get(id) {
+    return document.getElementById(id);
+  }
+
+  function wan_clear(node) {
+    node.innerHTML = '';
+  }
+
+  function wan_print(node, text, cls) {
+    var wan_row = document.createElement('div');
+    wan_row.className = 'wan_line' + (cls ? ' ' + cls : '');
+    wan_row.textContent = text;
+    node.appendChild(wan_row);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  /* ---------------- 二、顺序结构：逐步高亮执行 ---------------- */
+  var wan_seqTimer = null;
+
+  function wan_highlight(index) {
+    var wan_lines = wan_get('wan_code_seq').querySelectorAll('.wan_ln');
+    for (var wan_k = 0; wan_k < wan_lines.length; wan_k++) {
+      if (wan_k === index) {
+        wan_lines[wan_k].classList.add('wan_active');
+      } else {
+        wan_lines[wan_k].classList.remove('wan_active');
+      }
+    }
+  }
+
+  function wan_runSeq() {
+    if (wan_seqTimer) {
+      clearTimeout(wan_seqTimer);
+      wan_seqTimer = null;
+    }
+
+    var wan_out = wan_get('wan_out_seq');
+    wan_clear(wan_out);
+    wan_highlight(-1);
+
+    var wan_steps = [
+      { line: 0, text: '第 1 行执行 →  wan_a = 1' },
+      { line: 1, text: '第 2 行执行 →  wan_b = 1 + 2 = 3' },
+      { line: 2, text: '第 3 行执行 →  wan_c = 1 + 3 = 4' },
+      { line: 3, text: '第 4 行执行 →  输出 1 3 4', cls: 'wan_ok' }
+    ];
+
+    var wan_i = 0;
+    function wan_next() {
+      if (wan_i >= wan_steps.length) {
+        wan_highlight(-1);
+        return;
+      }
+      var wan_step = wan_steps[wan_i];
+      wan_highlight(wan_step.line);
+      wan_print(wan_out, wan_step.text, wan_step.cls);
+      wan_i++;
+      wan_seqTimer = setTimeout(wan_next, 650);
+    }
+    wan_next();
+  }
+
+  /* ---------------- 三-1、if / else if / else ---------------- */
+  function wan_runGrade() {
+    var wan_out = wan_get('wan_out_grade');
+    wan_clear(wan_out);
+
+    var wan_score = parseFloat(wan_get('wan_score').value);
+    if (isNaN(wan_score) || wan_score < 0 || wan_score > 100) {
+      wan_print(wan_out, '输入无效：分数必须在 0 ~ 100 之间', 'wan_err');
+      return;
+    }
+
+    var wan_level = '';
+    var wan_hit = '';
+
+    if (wan_score >= 90) {
+      wan_level = 'A';
+      wan_hit = '90 ≤ 分数 ≤ 100';
+    } else if (wan_score >= 80) {
+      wan_level = 'B';
+      wan_hit = '80 ≤ 分数 < 90';
+    } else if (wan_score >= 60) {
+      wan_level = 'C';
+      wan_hit = '60 ≤ 分数 < 80';
+    } else {
+      wan_level = 'D';
+      wan_hit = '0 ≤ 分数 < 60';
+    }
+
+    wan_print(wan_out, '输入 wan_score = ' + wan_score, 'wan_mute');
+    wan_print(wan_out, '命中分支：' + wan_hit);
+    wan_print(wan_out, '输出 wan_level = "' + wan_level + '"', 'wan_ok');
+  }
+
+  /* ---------------- 三-2、switch ---------------- */
+  function wan_runSwitch() {
+    var wan_out = wan_get('wan_out_switch');
+    wan_clear(wan_out);
+
+    var wan_day = parseInt(wan_get('wan_day').value, 10);
+    var wan_name = '';
+
+    switch (wan_day) {
+      case 1: wan_name = '星期一'; break;
+      case 2: wan_name = '星期二'; break;
+      case 3: wan_name = '星期三'; break;
+      case 4: wan_name = '星期四'; break;
+      case 5: wan_name = '星期五'; break;
+      case 6: wan_name = '星期六'; break;
+      case 7: wan_name = '星期日'; break;
+      default: wan_name = '无效的星期';
+    }
+
+    wan_print(wan_out, '输入 wan_day = ' + wan_day, 'wan_mute');
+
+    if (wan_day >= 1 && wan_day <= 5) {
+      wan_print(wan_out, 'case ' + wan_day + ' → ' + wan_name + '（工作日）', 'wan_ok');
+    } else if (wan_day === 6 || wan_day === 7) {
+      wan_print(wan_out, 'case ' + wan_day + ' → ' + wan_name + '（周末）', 'wan_ok');
+    } else {
+      wan_print(wan_out, '没有匹配的 case，执行 default → ' + wan_name, 'wan_err');
+    }
+  }
+
+  /* ---------------- 三-3、三元运算符 ---------------- */
+  function wan_runTernary() {
+    var wan_out = wan_get('wan_out_ternary');
+    wan_clear(wan_out);
+
+    var wan_n = parseInt(wan_get('wan_n').value, 10);
+    if (isNaN(wan_n)) {
+      wan_print(wan_out, '请输入一个整数', 'wan_err');
+      return;
+    }
+
+    var wan_result = (wan_n % 2 === 0) ? '偶数' : '奇数';
+    wan_print(wan_out, '条件：(wan_n % 2 === 0) → ' + (wan_n % 2 === 0), 'wan_mute');
+    wan_print(wan_out, '取值：' + wan_n + ' 是' + wan_result, 'wan_ok');
+  }
+
+  /* ---------------- 四-1、for 累加 ---------------- */
+  function wan_runFor() {
+    var wan_out = wan_get('wan_out_for');
+    wan_clear(wan_out);
+
+    var wan_n = parseInt(wan_get('wan_n_for').value, 10);
+    if (isNaN(wan_n) || wan_n < 1 || wan_n > 1000) {
+      wan_print(wan_out, '请输入 1 ~ 1000 之间的整数', 'wan_err');
+      return;
+    }
+
+    var wan_sum = 0;
+    var wan_show = [];
+    for (var wan_i = 1; wan_i <= wan_n; wan_i++) {
+      wan_sum += wan_i;
+      if (wan_i <= 8) {
+        wan_show.push(wan_i);
+      }
+    }
+
+    var wan_expr = wan_show.join(' + ');
+    if (wan_n > 8) {
+      wan_expr += ' + …… + ' + wan_n;
+    }
+
+    wan_print(wan_out, '循环体执行了 ' + wan_n + ' 次', 'wan_mute');
+    wan_print(wan_out, wan_expr + ' = ' + wan_sum, 'wan_ok');
+  }
+
+  /* ---------------- 四-2、while ---------------- */
+  function wan_runWhile() {
+    var wan_out = wan_get('wan_out_while');
+    wan_clear(wan_out);
+
+    var wan_v = 1;
+    var wan_seq = [wan_v];
+
+    while (wan_v <= 1000) {
+      wan_v *= 2;
+      wan_seq.push(wan_v);
+    }
+
+    wan_print(wan_out, 'while (wan_v <= 1000) 循环过程中 wan_v 的取值：', 'wan_mute');
+    wan_print(wan_out, wan_seq.join('  →  '));
+    wan_print(wan_out, '退出循环时 wan_v = ' + wan_v + '，条件已为假', 'wan_ok');
+  }
+
+  /* ---------------- 四-3、do…while ---------------- */
+  function wan_runDoWhile() {
+    var wan_out = wan_get('wan_out_dowhile');
+    wan_clear(wan_out);
+
+    // 对照组一：while，条件一开始就为假 → 一次都不执行
+    var wan_a = 10;
+    var wan_whileCount = 0;
+    while (wan_a < 5) {
+      wan_whileCount++;
+      wan_a++;
+    }
+
+    // 对照组二：do…while，条件一开始就为假 → 仍执行一次
+    var wan_b = 10;
+    var wan_doCount = 0;
+    do {
+      wan_doCount++;
+      wan_b++;
+    } while (wan_b < 5);
+
+    wan_print(wan_out, '起始值都是 10，条件 wan_x < 5 一开始就是假', 'wan_mute');
+    wan_print(wan_out, 'while    → 循环体执行 ' + wan_whileCount + ' 次（先判断，后执行）');
+    wan_print(wan_out, 'do…while → 循环体执行 ' + wan_doCount + ' 次（先执行，后判断）', 'wan_ok');
+  }
+
+  /* ---------------- 四-4、for…of ---------------- */
+  function wan_runForOf() {
+    var wan_out = wan_get('wan_out_forof');
+    wan_clear(wan_out);
+
+    var wan_fruits = ['苹果', '香蕉', '橙子', '葡萄'];
+    wan_print(wan_out, '数组：["' + wan_fruits.join('", "') + '"]', 'wan_mute');
+
+    for (var wan_item of wan_fruits) {
+      wan_print(wan_out, 'wan_item = ' + wan_item);
+    }
+
+    wan_print(wan_out, '共 ' + wan_fruits.length + ' 个元素，循环体执行 ' + wan_fruits.length + ' 次', 'wan_ok');
+  }
+
+  /* ---------------- 四-5、break / continue ---------------- */
+  function wan_runJump() {
+    var wan_out = wan_get('wan_out_jump');
+    wan_clear(wan_out);
+
+    var wan_list = [];
+    var wan_skipped = [];
+
+    for (var wan_i = 1; wan_i <= 20; wan_i++) {
+      if (wan_i > 17) {
+        break;
+      }
+      if (wan_i % 3 === 0) {
+        wan_skipped.push(wan_i);
+        continue;
+      }
+      wan_list.push(wan_i);
+    }
+
+    wan_print(wan_out, 'continue 跳过的数字（3 的倍数）：' + wan_skipped.join('、'), 'wan_mute');
+    wan_print(wan_out, 'break 触发条件：wan_i > 17，即在 wan_i = 18 时提前结束', 'wan_mute');
+    wan_print(wan_out, '最终 wan_list = [' + wan_list.join(', ') + ']', 'wan_ok');
+  }
+
+  /* ---------------- 四-6、嵌套 for 乘法表 ---------------- */
+  function wan_runMul() {
+    var wan_out = wan_get('wan_out_mul');
+    wan_clear(wan_out);
+
+    var wan_wrap = document.createElement('div');
+
+    for (var wan_i = 1; wan_i <= 9; wan_i++) {
+      var wan_rowEl = document.createElement('div');
+      wan_rowEl.className = 'wan_mul_row';
+
+      for (var wan_j = 1; wan_j <= wan_i; wan_j++) {
+        var wan_cell = document.createElement('span');
+        wan_cell.className = 'wan_mul_cell';
+        wan_cell.textContent = wan_j + '×' + wan_i + '=' + (wan_i * wan_j);
+        wan_rowEl.appendChild(wan_cell);
+      }
+
+      wan_wrap.appendChild(wan_rowEl);
+    }
+
+    wan_out.appendChild(wan_wrap);
+  }
+
+  /* ---------------- 事件绑定与首次渲染 ---------------- */
+  function wan_init() {
+    wan_get('wan_btn_seq').addEventListener('click', wan_runSeq);
+    wan_get('wan_btn_grade').addEventListener('click', wan_runGrade);
+    wan_get('wan_btn_switch').addEventListener('click', wan_runSwitch);
+    wan_get('wan_btn_ternary').addEventListener('click', wan_runTernary);
+    wan_get('wan_btn_for').addEventListener('click', wan_runFor);
+    wan_get('wan_btn_while').addEventListener('click', wan_runWhile);
+    wan_get('wan_btn_dowhile').addEventListener('click', wan_runDoWhile);
+    wan_get('wan_btn_forof').addEventListener('click', wan_runForOf);
+    wan_get('wan_btn_jump').addEventListener('click', wan_runJump);
+    wan_get('wan_btn_mul').addEventListener('click', wan_runMul);
+
+    // 页面打开时先把各示例跑一遍，避免出现空面板
+    wan_runGrade();
+    wan_runSwitch();
+    wan_runTernary();
+    wan_runFor();
+    wan_runWhile();
+    wan_runDoWhile();
+    wan_runForOf();
+    wan_runJump();
+    wan_runMul();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wan_init);
+  } else {
+    wan_init();
+  }
+})();
+</script>
+</body>
+</html>
