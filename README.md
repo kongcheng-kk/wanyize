@@ -12,6 +12,7 @@
 | :--- | :--- | :--- |
 | **15-1** | 逢 7 过 · 一百个盒子 | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/15-1.html) |
 | **15-2** | JavaScript 程序结构（顺序 / 条件 / 循环） | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/15-2.html) |
+| **17-6** | Promise 与 async · 包饺子异步流程 | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/17-6.html) |
 
 > **为什么要用上面的链接？**
 > GitHub 的代码页面（点进 `.html` 文件看到的那一页）只会把 HTML **以源码形式**展示出来，
@@ -24,5 +25,6 @@
 
 - `15-1.html` —— 100 个盒子，按「7 的倍数 / 个位是 7 / 十位是 7」三条规则筛出空盒子
 - `15-2.html` —— JavaScript 三种基本控制结构演示：顺序、条件（if / switch / 三元）、循环（for / while / do…while / for…of / break / continue / 嵌套）
+- `17-6.html` —— Promise 与 async/await 演示包饺子流程：先买原料，再用 `Promise.all` 让和面、和馅同时进行，附实时时间轴、运行日志、错误补救与串行/并行耗时对比
 
 每个页面都是自包含的单文件，CSS 与 JavaScript 全部内嵌，不依赖任何外部资源。

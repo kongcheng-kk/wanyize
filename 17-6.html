@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  文件：17-6.html
+  作者：万逸泽（学号 24001010412）
+  建立时间：2026-11-02 14:44
+  使用的大模型：deepseek-v4.1-flash
+  提示词：
+    成 17-4.html，对远程数据接口进行测试，支持 get、post 等，显示返回的数据和错误提示信息，
+    post 接口：https://jsonplaceholder.typicode.com/posts
+    成 17-5.html，展示 javascript 的两种定时器。
+    成 17-6.html，使用 promise 和 async 完成异步操作的演示包饺子的流程。先买原料，买完原料之后同时和面、和陷
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>17-6 Promise 与 async · 包饺子异步流程演示</title>
+<style>
+    :root {
+      --wan_bg: #fdf7ee;
+      --wan_card: #fffdf9;
+      --wan_line: #eadfce;
+      --wan_ink: #33302a;
+      --wan_dim: #7b715f;
+      --wan_red: #d94a2f;
+      --wan_red2: #f08a3c;
+      --wan_green: #1f8a70;
+      --wan_teal: #2b8fa6;
+      --wan_mono: Consolas, "Cascadia Code", Menlo, "Courier New", monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      color: var(--wan_ink);
+      background:
+        radial-gradient(760px 420px at 8% -6%, rgba(217, 74, 47, .10), transparent 60%),
+        radial-gradient(680px 380px at 100% 0%, rgba(31, 138, 112, .10), transparent 58%),
+        var(--wan_bg);
+      min-height: 100vh;
+      padding-bottom: 56px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- 顶部 ---------- */
+    .wan_top {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 26px 18px 8px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .wan_back {
+      flex: 0 0 auto;
+      margin-top: 6px;
+      color: var(--wan_red);
+      text-decoration: none;
+      font-size: 13px;
+      border: 1px solid rgba(217, 74, 47, .3);
+      background: rgba(217, 74, 47, .06);
+      padding: 7px 12px;
+      border-radius: 8px;
+      white-space: nowrap;
+      transition: .2s;
+    }
+    .wan_back:hover { background: rgba(217, 74, 47, .14); transform: translateX(-2px); }
+    .wan_topmain { flex: 1; min-width: 0; }
+    .wan_topmain h1 {
+      font-size: 26px;
+      letter-spacing: .5px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .wan_tag {
+      font: 700 12px/1 var(--wan_mono);
+      color: #fff;
+      background: linear-gradient(135deg, var(--wan_red), var(--wan_red2));
+      padding: 7px 9px;
+      border-radius: 7px;
+    }
+    .wan_topmain p {
+      margin-top: 9px;
+      font-size: 13.5px;
+      line-height: 1.8;
+      color: var(--wan_dim);
+      max-width: 760px;
+    }
+    .wan_topmain code {
+      font-family: var(--wan_mono);
+      font-size: 12.5px;
+      background: rgba(217, 74, 47, .09);
+      color: var(--wan_red);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    .wan_emoji { font-size: 22px; }
+
+    .wan_wrap { max-width: 1080px; margin: 0 auto; padding: 14px 18px 0; }
+
+    .wan_card {
+      background: var(--wan_card);
+      border: 1px solid var(--wan_line);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 10px 26px rgba(120, 90, 50, .07);
+    }
+    .wan_card + .wan_card { margin-top: 16px; }
+
+    .wan_h2 {
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 14px;
+      letter-spacing: .3px;
+    }
+    .wan_h2::before {
+      content: "";
+      width: 4px;
+      height: 15px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, var(--wan_red), var(--wan_red2));
+    }
+    .wan_h2 small {
+      font-size: 12px;
+      color: var(--wan_dim);
+      font-weight: 400;
+      margin-left: auto;
+      font-family: var(--wan_mono);
+    }
+
+    /* ---------- 流程条 ---------- */
+    .wan_flow {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .wan_fstep {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      color: var(--wan_dim);
+      background: #fbf4e9;
+      border: 1px solid var(--wan_line);
+      padding: 7px 11px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .wan_fstep b { color: var(--wan_ink); font-weight: 600; }
+    .wan_fstep_par {
+      background: rgba(31, 138, 112, .09);
+      border-color: rgba(31, 138, 112, .28);
+      color: var(--wan_green);
+    }
+    .wan_farrow { color: #c3b49b; font-size: 13px; }
+
+    /* ---------- 控制 ---------- */
+    .wan_ctrl {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .wan_modes {
+      display: inline-flex;
+      background: #f4ecdf;
+      border: 1px solid var(--wan_line);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .wan_mode {
+      font: 600 12.5px/1 var(--wan_mono);
+      color: var(--wan_dim);
+      background: none;
+      border: none;
+      padding: 9px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: .18s;
+    }
+    .wan_mode:hover { color: var(--wan_ink); }
+    .wan_mode_on {
+      background: #fff;
+      color: var(--wan_red);
+      box-shadow: 0 2px 8px rgba(160, 120, 70, .14);
+    }
+    .wan_btn {
+      font-size: 13.5px;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: .18s;
+      letter-spacing: .3px;
+    }
+    .wan_btn_main {
+      color: #fff;
+      background: linear-gradient(135deg, var(--wan_red), var(--wan_red2));
+      box-shadow: 0 6px 16px rgba(217, 74, 47, .26);
+    }
+    .wan_btn_main:hover { filter: brightness(1.05); transform: translateY(-1px); }
+    .wan_btn_main[disabled] { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
+    .wan_btn_ghost {
+      color: var(--wan_dim);
+      background: #fff;
+      border: 1px solid var(--wan_line);
+    }
+    .wan_btn_ghost:hover { color: var(--wan_ink); border-color: #d8c9b0; }
+    .wan_btn_ghost[disabled] { opacity: .5; cursor: not-allowed; }
+
+    .wan_check {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12.5px;
+      color: var(--wan_dim);
+      cursor: pointer;
+      user-select: none;
+      margin-left: auto;
+    }
+    .wan_check input { width: 15px; height: 15px; accent-color: var(--wan_red); cursor: pointer; }
+    .wan_check span b { color: var(--wan_red); font-weight: 600; }
+
+    .wan_metaBar {
+      margin-top: 14px;
+      display: flex;
+      gap: 22px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding-top: 13px;
+      border-top: 1px dashed var(--wan_line);
+      font-size: 12.5px;
+      color: var(--wan_dim);
+    }
+    .wan_metaBar b { font-family: var(--wan_mono); font-size: 14px; color: var(--wan_ink); }
+    .wan_metaBar .wan_stateTxt { color: var(--wan_red); font-weight: 600; }
+    .wan_metaBar .wan_sum { margin-left: auto; color: var(--wan_green); font-weight: 600; }
+
+    /* ---------- 时间轴 ---------- */
+    .wan_tl { list-style: none; display: flex; flex-direction: column; gap: 11px; }
+    .wan_row {
+      background: #fdf8f0;
+      border: 1px solid #f0e6d6;
+      border-radius: 11px;
+      padding: 11px 13px;
+      transition: .25s;
+    }
+    .wan_row_run { background: #fffaf0; border-color: rgba(240, 138, 60, .45); }
+    .wan_row_done { background: #f7fcf9; border-color: rgba(31, 138, 112, .35); }
+    .wan_row_bad { background: #fdf3f1; border-color: rgba(217, 74, 47, .4); }
+
+    .wan_rowhead { display: flex; align-items: center; gap: 9px; }
+    .wan_rname { font-size: 13.5px; font-weight: 600; }
+    .wan_rname small {
+      font-weight: 400;
+      color: #9a8f7c;
+      font-size: 11.5px;
+      margin-left: 5px;
+      font-family: var(--wan_mono);
+    }
+    .wan_badge {
+      font: 600 11px/1 var(--wan_mono);
+      padding: 4px 7px;
+      border-radius: 5px;
+      color: #8a7f6c;
+      background: #f0e7d8;
+      white-space: nowrap;
+    }
+    .wan_badge[data-st="run"] { color: #b45309; background: #fdecc8; }
+    .wan_badge[data-st="done"] { color: #157a5f; background: #d8f2e8; }
+    .wan_badge[data-st="bad"] { color: #b3261e; background: #fbdcd6; }
+    .wan_rtime {
+      margin-left: auto;
+      font: 600 12px/1 var(--wan_mono);
+      color: var(--wan_dim);
+    }
+    .wan_track {
+      height: 8px;
+      border-radius: 5px;
+      background: #f0e6d6;
+      margin-top: 9px;
+      overflow: hidden;
+    }
+    .wan_bar {
+      height: 100%;
+      width: 0;
+      border-radius: 5px;
+      background: linear-gradient(90deg, var(--wan_red), var(--wan_red2));
+    }
+    .wan_row[data-key="dough"] .wan_bar { background: linear-gradient(90deg, #1f8a70, #4bbf9b); }
+    .wan_row[data-key="filling"] .wan_bar { background: linear-gradient(90deg, #2b8fa6, #5fbcd1); }
+    .wan_row[data-key="boil"] .wan_bar { background: linear-gradient(90deg, #b45309, #f0a742); }
+    .wan_rdesc {
+      margin-top: 7px;
+      font-size: 11.8px;
+      color: #9a8f7c;
+      line-height: 1.6;
+    }
+    .wan_rdesc em { font-style: normal; color: var(--wan_green); font-weight: 600; }
+
+    /* ---------- 日志 ---------- */
+    .wan_log {
+      list-style: none;
+      background: #2b2620;
+      border-radius: 11px;
+      padding: 12px 14px;
+      min-height: 168px;
+      max-height: 300px;
+      overflow: auto;
+      font: 12.3px/1.75 var(--wan_mono);
+    }
+    .wan_log::-webkit-scrollbar { width: 8px; }
+    .wan_log::-webkit-scrollbar-thumb { background: #4d4538; border-radius: 4px; }
+    .wan_lts { color: #7a6f5d; margin-right: 9px; }
+    .wan_lmsg { color: #e6ddcd; }
+    .wan_logline[data-kind="ok"] .wan_lmsg { color: #7ee0b8; }
+    .wan_logline[data-kind="bad"] .wan_lmsg { color: #ff9c8a; }
+    .wan_logline[data-kind="warn"] .wan_lmsg { color: #ffd08a; }
+    .wan_logline[data-kind="run"] .wan_lmsg { color: #9fd4e8; }
+    .wan_logline[data-kind="head"] .wan_lmsg { color: #fff; font-weight: 700; }
+    .wan_logempty { color: #7a6f5d; font-size: 12.3px; }
+
+    /* ---------- 代码 ---------- */
+    .wan_codes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .wan_codebox {
+      border: 1px solid var(--wan_line);
+      border-radius: 11px;
+      overflow: hidden;
+      background: #2b2620;
+      transition: .2s;
+    }
+    .wan_code_on { border-color: var(--wan_red); box-shadow: 0 0 0 2px rgba(217, 74, 47, .15); }
+    .wan_codehead {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 12px;
+      background: #221e19;
+      color: #cbbda5;
+      font: 600 11.5px/1 var(--wan_mono);
+      letter-spacing: .4px;
+    }
+    .wan_codehead i {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #6b5f4d;
+      display: block;
+    }
+    .wan_code_on .wan_codehead i { background: var(--wan_red2); }
+    .wan_codebox pre {
+      margin: 0;
+      padding: 12px 14px 14px;
+      overflow: auto;
+      max-height: 330px;
+      font: 12px/1.75 var(--wan_mono);
+      color: #ded3c0;
+      tab-size: 2;
+    }
+    .wan_cm { color: #8a7c66; }
+    .wan_kw { color: #ffb27a; }
+    .wan_fn { color: #9fd4e8; }
+    .wan_st { color: #b6e3a8; }
+
+    /* ---------- Promise 状态 ---------- */
+    .wan_pstates {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 11px;
+    }
+    .wan_pstate {
+      border-radius: 11px;
+      padding: 13px;
+      border: 1px solid var(--wan_line);
+      background: #fdf8f0;
+    }
+    .wan_pstate h4 {
+      font-size: 12.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 7px;
+      font-family: var(--wan_mono);
+    }
+    .wan_pstate h4 i { width: 7px; height: 7px; border-radius: 50%; background: #a99b85; display: block; }
+    .wan_pstate p { font-size: 12px; line-height: 1.7; color: var(--wan_dim); }
+    .wan_pstate p code {
+      font: 11.5px/1.5 var(--wan_mono);
+      color: #b0492f;
+      background: #f7ece1;
+      padding: 1px 4px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .wan_pstate .wan_pcode {
+      display: block;
+      margin-top: 9px;
+      font: 11.5px/1.6 var(--wan_mono);
+      color: #5d5446;
+      background: #f4ecdf;
+      padding: 7px 9px;
+      border-radius: 7px;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+    .wan_ps_pending { border-color: #e3d7c4; }
+    .wan_ps_ful { border-color: rgba(31, 138, 112, .4); background: #f6fcf9; }
+    .wan_ps_ful h4 { color: var(--wan_green); }
+    .wan_ps_ful h4 i { background: var(--wan_green); }
+    .wan_ps_rej { border-color: rgba(217, 74, 47, .38); background: #fdf6f4; }
+    .wan_ps_rej h4 { color: var(--wan_red); }
+    .wan_ps_rej h4 i { background: var(--wan_red); }
+
+    /* ---------- 表格 ---------- */
+    .wan_table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .wan_table th, .wan_table td {
+      padding: 9px 10px;
+      text-align: left;
+      border-bottom: 1px solid #f0e6d6;
+    }
+    .wan_table th {
+      font-size: 11.5px;
+      color: var(--wan_dim);
+      font-weight: 600;
+      background: #fbf4e9;
+      letter-spacing: .3px;
+    }
+    .wan_table td:nth-child(2), .wan_table td:nth-child(3) {
+      font-family: var(--wan_mono);
+      white-space: nowrap;
+    }
+    .wan_table tr:last-child td { border-bottom: none; font-weight: 700; }
+    .wan_table .wan_save { color: var(--wan_green); font-weight: 700; }
+    .wan_table .wan_par { color: var(--wan_green); }
+
+    .wan_tip {
+      margin-top: 12px;
+      font-size: 12px;
+      line-height: 1.8;
+      color: #8a7f6c;
+      background: #fbf4e9;
+      border-left: 3px solid rgba(217, 74, 47, .45);
+      padding: 9px 12px;
+      border-radius: 0 8px 8px 0;
+    }
+    .wan_tip b { color: var(--wan_ink); }
+    .wan_tip code { font-family: var(--wan_mono); color: var(--wan_red); }
+
+    .wan_footer {
+      max-width: 1080px;
+      margin: 22px auto 0;
+      padding: 0 20px;
+      font-size: 12px;
+      color: #a1957f;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .wan_footer a { color: var(--wan_red); text-decoration: none; }
+    .wan_footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 820px) {
+      .wan_codes { grid-template-columns: 1fr; }
+      .wan_pstates { grid-template-columns: 1fr; }
+      .wan_check { margin-left: 0; width: 100%; }
+      .wan_topmain h1 { font-size: 21px; }
+      .wan_metaBar .wan_sum { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="wan_top">
+  <a class="wan_back" href="index.html">← 返回首页</a>
+  <div class="wan_topmain">
+    <h1>包饺子里的异步 <span class="wan_tag">17-6</span> <span class="wan_emoji">🥟</span></h1>
+    <p>用 <code>Promise</code> 和 <code>async / await</code> 演出包饺子的流程：先买原料，原料到手后
+      <b>和面、和馅同时开工</b>（<code>Promise.all</code>），两件事都完成才继续包、煮、吃。
+      点「开始包饺子」，看时间轴怎么走、日志里 Promise 怎么变成 fulfilled。</p>
+  </div>
+</header>
+
+<main class="wan_wrap">
+
+  <!-- 流程 + 控制 -->
+  <section class="wan_card">
+    <div class="wan_flow">
+      <span class="wan_fstep"><b>① 买原料</b></span>
+      <span class="wan_farrow">→</span>
+      <span class="wan_fstep wan_fstep_par"><b>② 和面</b> ∥ <b>和馅</b></span>
+      <span class="wan_farrow">→</span>
+      <span class="wan_fstep"><b>③ 擀皮 + 包饺子</b></span>
+      <span class="wan_farrow">→</span>
+      <span class="wan_fstep"><b>④ 煮饺子</b></span>
+      <span class="wan_farrow">→</span>
+      <span class="wan_fstep"><b>⑤ 开吃</b></span>
+    </div>
+
+    <div class="wan_ctrl">
+      <div class="wan_modes" id="wan_modes">
+        <button class="wan_mode wan_mode_on" type="button" data-mode="promise">Promise 链式</button>
+        <button class="wan_mode" type="button" data-mode="async">async / await</button>
+      </div>
+      <button class="wan_btn wan_btn_main" id="wan_start" type="button">开始包饺子</button>
+      <button class="wan_btn wan_btn_ghost" id="wan_reset" type="button">重置</button>
+      <label class="wan_check">
+        <input type="checkbox" id="wan_fail">
+        <span>模拟<b>买原料失败</b>（第一次 reject，再补救）</span>
+      </label>
+    </div>
+
+    <div class="wan_metaBar">
+      <span>已用时 <b id="wan_elapsed">0.0 s</b></span>
+      <span>当前状态 <b class="wan_stateTxt" id="wan_phase">等待开始</b></span>
+      <span class="wan_sum" id="wan_sum"></span>
+    </div>
+  </section>
+
+  <!-- 时间轴 -->
+  <section class="wan_card">
+    <h2 class="wan_h2">流程时间轴 <small id="wan_tlHint">并行任务会同时推进</small></h2>
+    <ul class="wan_tl" id="wan_tl">
+      <li class="wan_row" data-key="buy">
+        <div class="wan_rowhead">
+          <span class="wan_rname">买原料<small>wan_buy()</small></span>
+          <span class="wan_badge" data-st="idle">等待</span>
+          <span class="wan_rtime">—</span>
+        </div>
+        <div class="wan_track"><div class="wan_bar"></div></div>
+        <p class="wan_rdesc">去超市买面粉、猪肉、白菜 · 前缀任务，必须先完成</p>
+      </li>
+      <li class="wan_row" data-key="dough">
+        <div class="wan_rowhead">
+          <span class="wan_rname">和面<small>wan_knead()</small></span>
+          <span class="wan_badge" data-st="idle">等待</span>
+          <span class="wan_rtime">—</span>
+        </div>
+        <div class="wan_track"><div class="wan_bar"></div></div>
+        <p class="wan_rdesc">面粉加水揉成面团，醒 20 分钟 · <em>与和馅同时进行</em></p>
+      </li>
+      <li class="wan_row" data-key="filling">
+        <div class="wan_rowhead">
+          <span class="wan_rname">和馅<small>wan_fill()</small></span>
+          <span class="wan_badge" data-st="idle">等待</span>
+          <span class="wan_rtime">—</span>
+        </div>
+        <div class="wan_track"><div class="wan_bar"></div></div>
+        <p class="wan_rdesc">猪肉剁碎、白菜挤水、调味拌匀 · <em>与和面同时进行</em></p>
+      </li>
+      <li class="wan_row" data-key="wrap">
+        <div class="wan_rowhead">
+          <span class="wan_rname">擀皮 + 包饺子<small>wan_wrap()</small></span>
+          <span class="wan_badge" data-st="idle">等待</span>
+          <span class="wan_rtime">—</span>
+        </div>
+        <div class="wan_track"><div class="wan_bar"></div></div>
+        <p class="wan_rdesc">等和面、和馅都 fulfilled 之后才轮到这一步</p>
+      </li>
+      <li class="wan_row" data-key="boil">
+        <div class="wan_rowhead">
+          <span class="wan_rname">煮饺子<small>wan_boil()</small></span>
+          <span class="wan_badge" data-st="idle">等待</span>
+          <span class="wan_rtime">—</span>
+        </div>
+        <div class="wan_track"><div class="wan_bar"></div></div>
+        <p class="wan_rdesc">水开下锅，点三次凉水，浮起来就熟</p>
+      </li>
+      <li class="wan_row" data-key="eat">
+        <div class="wan_rowhead">
+          <span class="wan_rname">开吃<small>wan_eat()</small></span>
+          <span class="wan_badge" data-st="idle">等待</span>
+          <span class="wan_rtime">—</span>
+        </div>
+        <div class="wan_track"><div class="wan_bar"></div></div>
+        <p class="wan_rdesc">蘸醋 + 蒜泥，整条异步链结束</p>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 日志 -->
+  <section class="wan_card">
+    <h2 class="wan_h2">运行日志 <small>相对开始的时刻</small></h2>
+    <ul class="wan_log" id="wan_log"></ul>
+    <p class="wan_logempty" id="wan_logempty">点击「开始包饺子」后，这里会按时间顺序打印每一步。</p>
+  </section>
+
+  <!-- 代码 -->
+  <section class="wan_card">
+    <h2 class="wan_h2">两种写法，同一套流程 <small>高亮的是当前运行的模式</small></h2>
+    <div class="wan_codes">
+      <div class="wan_codebox wan_code_on" id="wan_code_promise">
+        <div class="wan_codehead"><i></i>promise-chain.js</div>
+        <pre><code><span class="wan_cm">// 每个步骤都返回一个 Promise</span>
+<span class="wan_kw">function</span> <span class="wan_fn">wan_buy</span>() {
+  <span class="wan_kw">return new</span> Promise(<span class="wan_kw">function</span> (resolve, reject) {
+    setTimeout(<span class="wan_kw">function</span> () {
+      <span class="wan_cm">// 面粉卖完就 reject，否则 resolve</span>
+      wan_hasFlour ? resolve(<span class="wan_st">'面粉 + 猪肉 + 白菜'</span>)
+                   : reject(<span class="wan_kw">new</span> Error(<span class="wan_st">'面粉卖完了'</span>));
+    }, 650);
+  });
+}
+
+<span class="wan_cm">// 买 → （和面 ∥ 和馅）→ 包 → 煮 → 吃</span>
+<span class="wan_fn">wan_buy</span>()
+  .then(<span class="wan_kw">function</span> (mat) {
+    <span class="wan_cm">// Promise.all：两件事同时做，都完成才继续</span>
+    <span class="wan_kw">return</span> Promise.all([
+      <span class="wan_fn">wan_knead</span>(), <span class="wan_fn">wan_fill</span>()
+    ]);
+  })
+  .then(<span class="wan_kw">function</span> () { <span class="wan_kw">return</span> <span class="wan_fn">wan_wrap</span>(); })
+  .then(<span class="wan_kw">function</span> () { <span class="wan_kw">return</span> <span class="wan_fn">wan_boil</span>(); })
+  .then(<span class="wan_kw">function</span> () { <span class="wan_kw">return</span> <span class="wan_fn">wan_eat</span>(); })
+  .catch(<span class="wan_kw">function</span> (err) {
+    <span class="wan_cm">// 任何一步 reject 都会跳到这里</span>
+    console.error(<span class="wan_st">'出错了：'</span>, err.message);
+  });</code></pre>
+      </div>
+
+      <div class="wan_codebox" id="wan_code_async">
+        <div class="wan_codehead"><i></i>async-await.js</div>
+        <pre><code><span class="wan_cm">// async 函数内部用 await，像同步代码一样顺</span>
+<span class="wan_kw">async function</span> <span class="wan_fn">wan_cook</span>() {
+  <span class="wan_kw">try</span> {
+    <span class="wan_cm">// 等原料；失败会跳到 catch</span>
+    <span class="wan_kw">var</span> mat = <span class="wan_kw">await</span> <span class="wan_fn">wan_buy</span>();
+
+    <span class="wan_cm">// 同时等两件事，等价于 Promise.all</span>
+    <span class="wan_kw">await</span> Promise.all([
+      <span class="wan_fn">wan_knead</span>(), <span class="wan_fn">wan_fill</span>()
+    ]);
+
+    <span class="wan_kw">await</span> <span class="wan_fn">wan_wrap</span>();  <span class="wan_cm">// 串行</span>
+    <span class="wan_kw">await</span> <span class="wan_fn">wan_boil</span>();
+    <span class="wan_kw">await</span> <span class="wan_fn">wan_eat</span>();
+  } <span class="wan_kw">catch</span> (err) {
+    console.error(<span class="wan_st">'出错了：'</span>, err.message);
+  }
+}
+
+<span class="wan_fn">wan_cook</span>();  <span class="wan_cm">// async 函数返回的也是 Promise</span></code></pre>
+      </div>
+    </div>
+    <p class="wan_tip">
+      <b>关键点：</b><code>await</code> 会把后面的代码挂起，但<b>不会阻塞页面</b>——等待期间浏览器照样响应点击、播放动画。
+      所以和面、和馅用 <code>Promise.all([...])</code> 包起来，两件事才会真的同时开始，而不是一个做完再做另一个。
+    </p>
+  </section>
+
+  <!-- Promise 状态 -->
+  <section class="wan_card">
+    <h2 class="wan_h2">Promise 的三种状态 <small>不可逆，只能变一次</small></h2>
+    <div class="wan_pstates">
+      <div class="wan_pstate wan_ps_pending">
+        <h4><i></i>pending 等待中</h4>
+        <p>刚创建的 Promise，既没成功也没失败。买原料、和面、煮饺子在等待时都处于这个状态。</p>
+        <code class="wan_pcode">new Promise(() =&gt; {})</code>
+      </div>
+      <div class="wan_pstate wan_ps_ful">
+        <h4><i></i>fulfilled 已兑现</h4>
+        <p>调用 <b>resolve(值)</b> 之后。状态变成 fulfilled，值交给 <code>.then()</code> 或 <code>await</code> 继续用。</p>
+        <code class="wan_pcode">resolve('面团醒好了')</code>
+      </div>
+      <div class="wan_pstate wan_ps_rej">
+        <h4><i></i>rejected 已拒绝</h4>
+        <p>调用 <b>reject(错误)</b> 或代码抛异常。跳过后面的 then，直接进 <code>.catch()</code> / <code>try…catch</code>。</p>
+        <code class="wan_pcode">reject(new Error('面粉卖完了'))</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- 串行 vs 并行 -->
+  <section class="wan_card">
+    <h2 class="wan_h2">为什么一定要 Promise.all <small>串行 vs 并行</small></h2>
+    <table class="wan_table">
+      <thead>
+        <tr><th>阶段</th><th>串行耗时</th><th>并行耗时</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>买原料</td><td>650 ms</td><td>650 ms</td><td>必须先做，没有原料什么都干不了</td></tr>
+        <tr><td>和面</td><td>1300 ms</td><td>1300 ms</td><td class="wan_par">与和馅同时开始</td></tr>
+        <tr><td>和馅</td><td>1000 ms</td><td>—</td><td class="wan_par">被和面“盖住”，不额外占时间</td></tr>
+        <tr><td>擀皮 + 包饺子</td><td>1200 ms</td><td>1200 ms</td><td>两件事都完成才能动手</td></tr>
+        <tr><td>煮饺子</td><td>1500 ms</td><td>1500 ms</td><td>顺序执行</td></tr>
+        <tr><td>开吃</td><td>400 ms</td><td>400 ms</td><td>整条异步链结束</td></tr>
+        <tr><td>合计</td><td>6050 ms</td><td>5050 ms</td><td class="wan_save">省下约 1 秒（≈17%）</td></tr>
+      </tbody>
+    </table>
+    <p class="wan_tip">
+      <b>另一处容易踩的坑：</b>若写成 <code>await wan_knead(); await wan_fill();</code>，两步会变成串行，总时间回到 6050 ms——
+      <code>await</code> 只能等，不会自动并行。要并行必须先把两个 Promise 都创建出来，再一起 await。
+    </p>
+  </section>
+
+</main>
+
+<footer class="wan_footer">
+  <span>《高级网页设计》第 17 章 · 异步编程 · 万逸泽 24001010412</span>
+  <span><a href="index.html">返回作品集首页</a></span>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var wan_$ = function (id) { return document.getElementById(id); };
+
+  var WAN_TIME = {
+    buy: 650,
+    buyRetry: 700,
+    dough: 1300,
+    filling: 1000,
+    wrap: 1200,
+    boil: 1500,
+    eat: 400
+  };
+
+  var WAN_NAME = {
+    buy: '买原料',
+    dough: '和面',
+    filling: '和馅',
+    wrap: '擀皮 + 包饺子',
+    boil: '煮饺子',
+    eat: '开吃'
+  };
+
+  var wan_state = {
+    running: false,
+    mode: 'promise',
+    startAt: 0,
+    clockId: null,
+    failFirst: false
+  };
+
+  /* ---------- 基础工具 ---------- */
+
+  function wan_sleep(ms) {
+    return new Promise(function (resolve) {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  function wan_row(key) {
+    return document.querySelector('.wan_row[data-key="' + key + '"]');
+  }
+
+  function wan_setState(key, st, text) {
+    var row = wan_row(key);
+    if (!row) { return; }
+    var badge = row.querySelector('.wan_badge');
+    badge.setAttribute('data-st', st);
+    badge.textContent = text;
+    row.classList.toggle('wan_row_run', st === 'run');
+    row.classList.toggle('wan_row_done', st === 'done');
+    row.classList.toggle('wan_row_bad', st === 'bad');
+  }
+
+  function wan_animate(key, ms) {
+    var bar = wan_row(key).querySelector('.wan_bar');
+    bar.style.transition = 'none';
+    bar.style.width = '0%';
+    void bar.offsetWidth;
+    bar.style.transition = 'width ' + ms + 'ms linear';
+    bar.style.width = '100%';
+  }
+
+  function wan_rel() {
+    var ms = Date.now() - wan_state.startAt;
+    return '+' + (ms / 1000).toFixed(1) + 's';
+  }
+
+  function wan_log(msg, kind) {
+    var ul = wan_$('wan_log');
+    var li = document.createElement('li');
+    li.className = 'wan_logline';
+    li.setAttribute('data-kind', kind || 'run');
+    li.innerHTML = '<span class="wan_lts">' + wan_rel() + '</span>' +
+                   '<span class="wan_lmsg">' + msg + '</span>';
+    ul.appendChild(li);
+    ul.scrollTop = ul.scrollHeight;
+    wan_$('wan_logempty').hidden = true;
+  }
+
+  function wan_clearLog() {
+    wan_$('wan_log').innerHTML = '';
+    wan_$('wan_logempty').hidden = false;
+  }
+
+  /* ---------- 单个任务 ---------- */
+
+  function wan_task(key, ms) {
+    var t0 = Date.now();
+    wan_setState(key, 'run', '进行中');
+    wan_animate(key, ms);
+    wan_log('→ ' + WAN_NAME[key] + ' 开始（' + ms + ' ms）', 'run');
+
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        var cost = Date.now() - t0;
+        wan_row(key).querySelector('.wan_rtime').textContent = cost + ' ms';
+        wan_setState(key, 'done', '完成');
+        wan_log('✔ ' + WAN_NAME[key] + ' 完成，耗时 ' + cost + ' ms', 'ok');
+        resolve(key);
+      }, ms);
+    });
+  }
+
+  /* ---------- 买原料 ---------- */
+
+  function wan_buyOnce(ms, forceOk) {
+    return new Promise(function (resolve, reject) {
+      setTimeout(function () {
+        if (!forceOk && wan_state.failFirst) {
+          reject(new Error('超市面粉卖完了'));
+          return;
+        }
+        resolve('面粉 2 斤 + 猪肉馅 1 斤 + 白菜 1 颗');
+      }, ms);
+    });
+  }
+
+  function wan_buyStart() {
+    wan_setState('buy', 'run', '进行中');
+    wan_animate('buy', WAN_TIME.buy);
+    wan_log('→ 出发去超市买原料（' + WAN_TIME.buy + ' ms）', 'run');
+  }
+
+  function wan_buyEnd(mat, t0) {
+    var cost = Date.now() - t0;
+    wan_row('buy').querySelector('.wan_rtime').textContent = cost + ' ms';
+    wan_setState('buy', 'done', '完成');
+    wan_log('✔ 买到原料：' + mat, 'ok');
+  }
+
+  function wan_buyPromise(t0) {
+    wan_buyStart();
+    return wan_buyOnce(WAN_TIME.buy, false).catch(function (err) {
+      wan_setState('buy', 'bad', '失败');
+      wan_log('✖ ' + err.message + ' → Promise 变成 <b>rejected</b>', 'bad');
+      wan_log('↻ 进入 .catch()：换一家超市，再买一次', 'warn');
+      wan_setState('buy', 'run', '补救中');
+      wan_animate('buy', WAN_TIME.buyRetry);
+      return wan_buyOnce(WAN_TIME.buyRetry, true);
+    }).then(function (mat) {
+      wan_buyEnd(mat, t0);
+      return mat;
+    });
+  }
+
+  async function wan_buyAsync(t0) {
+    wan_buyStart();
+    try {
+      var mat = await wan_buyOnce(WAN_TIME.buy, false);
+      wan_buyEnd(mat, t0);
+      return mat;
+    } catch (err) {
+      wan_setState('buy', 'bad', '失败');
+      wan_log('✖ ' + err.message + ' → 抛出异常，进入 catch', 'bad');
+      wan_log('↻ catch 块里补救：换一家超市，再买一次', 'warn');
+      wan_setState('buy', 'run', '补救中');
+      wan_animate('buy', WAN_TIME.buyRetry);
+      var mat2 = await wan_buyOnce(WAN_TIME.buyRetry, true);
+      wan_buyEnd(mat2, t0);
+      return mat2;
+    }
+  }
+
+  /* ---------- 计时 ---------- */
+
+  function wan_startClock() {
+    wan_state.startAt = Date.now();
+    wan_$('wan_elapsed').textContent = '0.0 s';
+    wan_state.clockId = setInterval(function () {
+      var ms = Date.now() - wan_state.startAt;
+      wan_$('wan_elapsed').textContent = (ms / 1000).toFixed(1) + ' s';
+    }, 50);
+  }
+
+  function wan_stopClock() {
+    if (wan_state.clockId) {
+      clearInterval(wan_state.clockId);
+      wan_state.clockId = null;
+    }
+  }
+
+  /* ---------- Promise 版 ---------- */
+
+  function wan_runPromise() {
+    var t0 = Date.now();
+    wan_log('【Promise 链式】开始包饺子', 'head');
+
+    return wan_buyPromise(t0).then(function () {
+      wan_log('⇒ 原料到手，Promise.all 让和面、和馅同时开工', 'run');
+      return Promise.all([
+        wan_task('dough', WAN_TIME.dough),
+        wan_task('filling', WAN_TIME.filling)
+      ]);
+    }).then(function () {
+      wan_log('⇒ 和面、和馅都 fulfilled，开始包饺子', 'run');
+      return wan_task('wrap', WAN_TIME.wrap);
+    }).then(function () {
+      return wan_task('boil', WAN_TIME.boil);
+    }).then(function () {
+      return wan_task('eat', WAN_TIME.eat);
+    }).then(function () {
+      wan_finish(true);
+    }).catch(function (err) {
+      wan_log('✖ 流程中断：' + err.message, 'bad');
+      wan_finish(false);
+    });
+  }
+
+  /* ---------- async / await 版 ---------- */
+
+  async function wan_runAsync() {
+    var t0 = Date.now();
+    wan_log('【async / await】开始包饺子', 'head');
+
+    try {
+      await wan_buyAsync(t0);
+      wan_log('⇒ 原料到手，await Promise.all([和面, 和馅]) 同时开工', 'run');
+
+      await Promise.all([
+        wan_task('dough', WAN_TIME.dough),
+        wan_task('filling', WAN_TIME.filling)
+      ]);
+      wan_log('⇒ 两个 Promise 都 fulfilled，继续往下走', 'run');
+
+      await wan_task('wrap', WAN_TIME.wrap);
+      await wan_task('boil', WAN_TIME.boil);
+      await wan_task('eat', WAN_TIME.eat);
+
+      wan_finish(true);
+    } catch (err) {
+      wan_log('✖ 流程中断：' + err.message, 'bad');
+      wan_finish(false);
+    }
+  }
+
+  /* ---------- 开始 / 结束 / 重置 ---------- */
+
+  function wan_finish(ok) {
+    wan_stopClock();
+    wan_state.running = false;
+    wan_$('wan_start').disabled = false;
+    wan_$('wan_reset').disabled = false;
+
+    var ms = Date.now() - wan_state.startAt;
+    wan_$('wan_elapsed').textContent = (ms / 1000).toFixed(1) + ' s';
+    wan_$('wan_phase').textContent = ok ? '饺子出锅 🥟' : '流程中断';
+
+    var parallel = 650 + 1300 + 1200 + 1500 + 400;
+    var serial = 650 + 1300 + 1000 + 1200 + 1500 + 400;
+    var sum = wan_$('wan_sum');
+    sum.hidden = false;
+    if (ok) {
+      sum.textContent = '总耗时 ' + (ms / 1000).toFixed(2) + ' s · 串行需 ' +
+        (serial / 1000).toFixed(2) + ' s · 并行省下 ' +
+        ((serial - parallel) / 1000).toFixed(2) + ' s';
+      wan_log('✔ 全部完成，总耗时 ' + ms + ' ms（并行方案理论上 ' + parallel + ' ms）', 'ok');
+    } else {
+      sum.textContent = '本次没有走完流程';
+    }
+  }
+
+  function wan_resetAll() {
+    if (wan_state.running) { return; }
+    wan_stopClock();
+    document.querySelectorAll('.wan_row').forEach(function (row) {
+      var bar = row.querySelector('.wan_bar');
+      bar.style.transition = 'none';
+      bar.style.width = '0%';
+      row.querySelector('.wan_rtime').textContent = '—';
+      row.querySelector('.wan_badge').setAttribute('data-st', 'idle');
+      row.querySelector('.wan_badge').textContent = '等待';
+      row.classList.remove('wan_row_run', 'wan_row_done', 'wan_row_bad');
+    });
+    wan_clearLog();
+    wan_$('wan_elapsed').textContent = '0.0 s';
+    wan_$('wan_phase').textContent = '等待开始';
+    wan_$('wan_sum').hidden = true;
+    wan_$('wan_sum').textContent = '';
+  }
+
+  function wan_start() {
+    if (wan_state.running) { return; }
+    wan_resetAll();
+
+    wan_state.running = true;
+    wan_state.failFirst = wan_$('wan_fail').checked;
+
+    wan_$('wan_start').disabled = true;
+    wan_$('wan_reset').disabled = true;
+    wan_$('wan_phase').textContent = wan_state.mode === 'promise' ? 'Promise 链运行中…' : 'async 函数运行中…';
+
+    wan_startClock();
+
+    if (wan_state.mode === 'promise') {
+      wan_runPromise();
+    } else {
+      wan_runAsync();
+    }
+  }
+
+  /* ---------- 模式切换 ---------- */
+
+  function wan_setMode(mode) {
+    wan_state.mode = mode;
+    Array.prototype.forEach.call(wan_$('wan_modes').querySelectorAll('.wan_mode'), function (btn) {
+      btn.classList.toggle('wan_mode_on', btn.getAttribute('data-mode') === mode);
+    });
+    wan_$('wan_code_promise').classList.toggle('wan_code_on', mode === 'promise');
+    wan_$('wan_code_async').classList.toggle('wan_code_on', mode === 'async');
+  }
+
+  /* ---------- 绑定 ---------- */
+
+  wan_$('wan_modes').addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.wan_mode') : null;
+    if (!btn || wan_state.running) { return; }
+    wan_setMode(btn.getAttribute('data-mode'));
+  });
+
+  wan_$('wan_start').addEventListener('click', wan_start);
+  wan_$('wan_reset').addEventListener('click', wan_resetAll);
+  wan_$('wan_fail').addEventListener('change', function () {
+    if (this.checked) {
+      wan_log('已勾选「模拟买原料失败」：下次运行会先失败一次再补救', 'warn');
+    }
+  });
+
+  wan_setMode('promise');
+  wan_resetAll();
+})();
+</script>
+</body>
+</html>
