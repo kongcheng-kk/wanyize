@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  文件：9-1.html
+  作者：万逸泽（学号 24001010412）
+  建立时间：2026-11-04 11:08
+  使用的大模型：deepseek-v4.1-flash
+  提示词：
+    @"C:/Users/20548/Documents/WXWork/1688857174616971/Cache/File/2026-11/10.html"
+    @"C:/Users/20548/Documents/WXWork/1688857174616971/Cache/File/2026-11/9.html"
+    这是别人做的9.1和10.1，换成我自己的，并且加到首页里面
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>9-1 CSS transition 过渡 · 让属性变化滑过去</title>
+<style>
+    :root {
+      --wan_bg: #f4f2fb;
+      --wan_card: #ffffff;
+      --wan_card2: #faf9ff;
+      --wan_line: #e4def6;
+      --wan_ink: #1c1730;
+      --wan_dim: #6b6585;
+      --wan_violet: #6d4aff;
+      --wan_violet_d: #5738db;
+      --wan_pink: #d94e8f;
+      --wan_cyan: #0e9aa7;
+      --wan_amber: #d97706;
+      --wan_green: #0f9d58;
+      --wan_red: #dc2626;
+      --wan_mono: Consolas, "Cascadia Code", Menlo, "Courier New", monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      color: var(--wan_ink);
+      background:
+        radial-gradient(720px 400px at 4% -8%, rgba(109, 74, 255, .12), transparent 62%),
+        radial-gradient(680px 360px at 100% 0%, rgba(217, 78, 143, .09), transparent 60%),
+        var(--wan_bg);
+      min-height: 100vh;
+      padding-bottom: 40px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- 顶部 ---------- */
+    .wan_top {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 26px 18px 6px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .wan_back {
+      flex: 0 0 auto;
+      margin-top: 5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--wan_violet);
+      text-decoration: none;
+      font-size: 13px;
+      border: 1px solid rgba(109, 74, 255, .28);
+      background: rgba(109, 74, 255, .06);
+      padding: 7px 12px;
+      border-radius: 9px;
+      white-space: nowrap;
+      transition: .2s;
+    }
+    .wan_back:hover { background: #fff; border-color: #bcabff; transform: translateX(-2px); }
+
+    .wan_topmain { flex: 1 1 auto; min-width: 0; }
+    .wan_h1 {
+      font-size: 26px;
+      line-height: 1.3;
+      font-weight: 800;
+      letter-spacing: .3px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .wan_tag {
+      font-family: var(--wan_mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      color: #fff;
+      background: linear-gradient(135deg, #6d4aff, #b06bff);
+      padding: 3px 9px;
+      border-radius: 7px;
+      box-shadow: 0 6px 14px -8px rgba(109, 74, 255, .9);
+    }
+    .wan_sub {
+      margin-top: 7px;
+      font-size: 14px;
+      color: var(--wan_dim);
+      line-height: 1.7;
+    }
+    .wan_sub code, .wan_p code, .wan_tip code {
+      font-family: var(--wan_mono);
+      font-size: .92em;
+      background: rgba(109, 74, 255, .09);
+      color: var(--wan_violet_d);
+      border-radius: 4px;
+      padding: 1px 5px;
+    }
+
+    /* ---------- 容器 ---------- */
+    .wan_wrap { max-width: 1080px; margin: 0 auto; padding: 6px 18px 0; }
+
+    .wan_hero {
+      margin-top: 18px;
+      border-radius: 20px;
+      padding: 26px 28px 24px;
+      color: #fff;
+      background:
+        radial-gradient(420px 200px at 88% 0%, rgba(255, 255, 255, .22), transparent 68%),
+        linear-gradient(125deg, #5a35d6 0%, #7c4dff 52%, #b06bff 100%);
+      box-shadow: 0 18px 40px -24px rgba(74, 40, 180, .9);
+    }
+    .wan_hero h2 {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: .3px;
+    }
+    .wan_hero p {
+      margin-top: 8px;
+      font-size: 13.5px;
+      line-height: 1.8;
+      color: rgba(255, 255, 255, .88);
+      max-width: 760px;
+    }
+    .wan_chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .wan_chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .16);
+      border: 1px solid rgba(255, 255, 255, .3);
+      font-family: var(--wan_mono);
+    }
+
+    /* ---------- 卡片 ---------- */
+    .wan_sec {
+      background: var(--wan_card);
+      border: 1px solid var(--wan_line);
+      border-radius: 18px;
+      padding: 22px 26px 24px;
+      margin-top: 18px;
+      box-shadow: 0 12px 30px -26px rgba(40, 20, 100, .5);
+    }
+    .wan_sec_h {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 13px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--wan_line);
+    }
+    .wan_num {
+      flex: none;
+      width: 27px;
+      height: 27px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--wan_mono);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--wan_violet);
+      background: rgba(109, 74, 255, .1);
+      border: 1px solid rgba(109, 74, 255, .18);
+    }
+    .wan_sec_h h2 {
+      font-size: 17.5px;
+      font-weight: 700;
+      letter-spacing: .2px;
+    }
+    .wan_sec_h .wan_sec_note {
+      margin-left: auto;
+      font-size: 12px;
+      color: #9a94b0;
+      white-space: nowrap;
+    }
+    .wan_p {
+      font-size: 14px;
+      line-height: 1.85;
+      color: #3d3759;
+      margin-bottom: 12px;
+    }
+    .wan_p b { color: var(--wan_violet_d); font-weight: 600; }
+    .wan_tip {
+      display: flex;
+      gap: 9px;
+      font-size: 13px;
+      line-height: 1.75;
+      color: #5b5478;
+      background: var(--wan_card2);
+      border: 1px dashed #d8cff7;
+      border-left: 3px solid var(--wan_violet);
+      border-radius: 10px;
+      padding: 11px 14px;
+      margin-top: 14px;
+    }
+    .wan_tip .wan_tip_i { flex: none; font-weight: 700; color: var(--wan_violet); }
+
+    /* ---------- 对比条 ---------- */
+    .wan_vs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 4px;
+    }
+    .wan_vs_item {
+      border: 1px solid var(--wan_line);
+      border-radius: 13px;
+      padding: 15px 16px 16px;
+      background: var(--wan_card2);
+      transition: border-color .25s, box-shadow .25s;
+    }
+    .wan_vs_item:hover {
+      border-color: #c9baff;
+      box-shadow: 0 10px 24px -20px rgba(80, 40, 200, .8);
+    }
+    .wan_vs_h {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a4368;
+      margin-bottom: 12px;
+    }
+    .wan_vs_dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--c, #94a3b8);
+      box-shadow: 0 0 0 3px rgba(148, 163, 184, .16);
+    }
+    .wan_vs_track {
+      height: 12px;
+      border-radius: 99px;
+      background: #ece8f8;
+      overflow: hidden;
+    }
+    .wan_vs_fill {
+      display: block;
+      height: 100%;
+      width: 16%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--wan_violet), #b18cff);
+    }
+    .wan_vs_item:hover .wan_vs_fill { width: 100%; }
+    .wan_vs_fill_b { transition: width .85s cubic-bezier(.25, .8, .35, 1); }
+    .wan_vs_item:first-child .wan_vs_fill { background: linear-gradient(90deg, #94a3b8, #cbd5e1); }
+    .wan_vs_code {
+      margin-top: 11px;
+      font-family: var(--wan_mono);
+      font-size: 11.5px;
+      color: #7b7495;
+    }
+    .wan_vs_p {
+      margin-top: 7px;
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: #6b6585;
+    }
+
+    /* ---------- 代码 ---------- */
+    .wan_code {
+      background: #191430;
+      color: #e6e1ff;
+      border-radius: 12px;
+      padding: 15px 17px;
+      font-family: var(--wan_mono);
+      font-size: 12.5px;
+      line-height: 1.85;
+      overflow-x: auto;
+      tab-size: 2;
+    }
+    .wan_code .wan_c_sel { color: #ffd479; }
+    .wan_code .wan_c_p { color: #8fd3ff; }
+    .wan_code .wan_c_v { color: #b9a2ff; }
+    .wan_code .wan_c_n { color: #ffb27a; }
+    .wan_code .wan_c_f { color: #7fe3b8; }
+    .wan_code .wan_c_c { color: #6f679a; }
+
+    /* ---------- 子属性表 ---------- */
+    .wan_tbwrap { overflow-x: auto; margin-top: 14px; }
+    table.wan_tb {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 560px;
+    }
+    table.wan_tb th, table.wan_tb td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid #eee9fa;
+      vertical-align: top;
+    }
+    table.wan_tb th {
+      font-size: 12px;
+      color: #8b84a3;
+      font-weight: 600;
+      background: #faf9ff;
+    }
+    table.wan_tb td:first-child {
+      font-family: var(--wan_mono);
+      color: var(--wan_violet_d);
+      white-space: nowrap;
+    }
+    table.wan_tb tr:last-child td { border-bottom: none; }
+
+    /* ---------- 实验台 ---------- */
+    .wan_lab {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 16px;
+      margin-top: 4px;
+    }
+    .wan_lab_ctl {
+      border: 1px solid var(--wan_line);
+      border-radius: 13px;
+      background: var(--wan_card2);
+      padding: 15px 15px 16px;
+    }
+    .wan_field { margin-bottom: 13px; }
+    .wan_field > label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+      color: #5d5679;
+      margin-bottom: 6px;
+    }
+    .wan_field > label b {
+      font-family: var(--wan_mono);
+      font-size: 11.5px;
+      color: var(--wan_violet);
+      background: rgba(109, 74, 255, .1);
+      border-radius: 5px;
+      padding: 1px 6px;
+    }
+    .wan_field select {
+      width: 100%;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--wan_ink);
+      background: #fff;
+      border: 1px solid #ddd6f3;
+      border-radius: 8px;
+      padding: 7px 9px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .wan_field select:focus {
+      border-color: var(--wan_violet);
+      box-shadow: 0 0 0 3px rgba(109, 74, 255, .12);
+    }
+    .wan_field input[type="range"] {
+      width: 100%;
+      accent-color: var(--wan_violet);
+      height: 18px;
+    }
+    .wan_lab_btns { display: flex; gap: 8px; margin-top: 4px; }
+    .wan_btn {
+      flex: 1;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 9px 12px;
+      border-radius: 9px;
+      border: 1px solid #ddd6f3;
+      background: #fff;
+      color: #4d4670;
+      cursor: pointer;
+      transition: .18s;
+    }
+    .wan_btn:hover { border-color: #bfaeff; color: var(--wan_violet_d); }
+    .wan_btn_p {
+      background: linear-gradient(135deg, #6d4aff, #9a6bff);
+      border-color: transparent;
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 10px 22px -14px rgba(109, 74, 255, .95);
+    }
+    .wan_btn_p:hover { color: #fff; filter: brightness(1.05); transform: translateY(-1px); }
+
+    .wan_lab_stage {
+      position: relative;
+      border: 1px solid var(--wan_line);
+      border-radius: 13px;
+      background:
+        linear-gradient(#fbfaff 1px, transparent 1px) 0 0 / 100% 24px,
+        linear-gradient(90deg, #fbfaff 1px, transparent 1px) 0 0 / 24px 100%,
+        #f8f6ff;
+      min-height: 232px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .wan_lab_stage::before {
+      content: "预览区";
+      position: absolute;
+      top: 9px;
+      left: 12px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: #b0a9cc;
+    }
+    .wan_play {
+      width: 108px;
+      height: 108px;
+      border-radius: 20px;
+      border: 2px solid #cfc3ff;
+      background: #efeaff;
+      color: #6d4aff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--wan_mono);
+      font-size: 12px;
+      will-change: transform;
+    }
+    .wan_stage_note {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 9px;
+      font-size: 11.5px;
+      color: #8f88ab;
+      text-align: center;
+    }
+
+    .wan_genwrap {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .wan_gen_h {
+      font-size: 12px;
+      color: #8b84a3;
+      margin-bottom: 7px;
+    }
+    .wan_genwrap .wan_code { min-height: 128px; }
+    .wan_tlog {
+      list-style: none;
+      border: 1px solid var(--wan_line);
+      border-radius: 12px;
+      background: var(--wan_card2);
+      padding: 6px 10px;
+      min-height: 128px;
+      max-height: 168px;
+      overflow-y: auto;
+    }
+    .wan_tlog_item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      padding: 6px 2px;
+      border-bottom: 1px dashed #ece7fa;
+      animation: wan_fade .25s ease;
+    }
+    .wan_tlog_item:last-child { border-bottom: none; }
+    .wan_tlog_item b {
+      font-family: var(--wan_mono);
+      font-size: 11px;
+      color: #fff;
+      background: var(--wan_violet);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-weight: 600;
+    }
+    .wan_tlog_item span { color: #5d5679; font-family: var(--wan_mono); font-size: 11.5px; }
+    .wan_tlog_item i { margin-left: auto; color: #9a94b0; font-style: normal; font-size: 11px; }
+    .wan_tlog_empty { color: #a9a3bf; font-size: 12px; padding: 8px 2px; }
+
+    @keyframes wan_fade {
+      from { opacity: 0; transform: translateY(-3px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    /* ---------- 缓动赛跑 ---------- */
+    .wan_race {
+      border: 1px solid var(--wan_line);
+      border-radius: 13px;
+      background: var(--wan_card2);
+      padding: 8px 16px 16px;
+    }
+    .wan_race_row {
+      display: grid;
+      grid-template-columns: 158px 1fr;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 0;
+      border-bottom: 1px dashed #ece7fa;
+    }
+    .wan_race_row:last-of-type { border-bottom: none; }
+    .wan_race_name {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-family: var(--wan_mono);
+      font-size: 11.5px;
+      color: #4d4670;
+    }
+    .wan_race_name svg {
+      flex: none;
+      width: 52px;
+      height: 32px;
+      overflow: visible;
+    }
+    .wan_race_name span { line-height: 1.35; }
+    .wan_race_track {
+      position: relative;
+      height: 30px;
+      border-radius: 8px;
+      background:
+        repeating-linear-gradient(90deg, #f0ecfb 0 1px, transparent 1px 25%),
+        #f7f5ff;
+      border: 1px solid #ebe5fa;
+    }
+    .wan_ball {
+      position: absolute;
+      left: 3px;
+      top: 50%;
+      width: 20px;
+      height: 20px;
+      margin-top: -10px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 32% 28%, #fff6, transparent 55%), var(--c, #6d4aff);
+      box-shadow: 0 3px 8px -3px rgba(40, 20, 100, .5);
+      transition: left 1.5s;
+    }
+    .wan_race_rows.wan_run .wan_ball { left: calc(100% - 23px); }
+    .wan_e_linear { transition-timing-function: linear; }
+    .wan_e_ease { transition-timing-function: ease; }
+    .wan_e_in { transition-timing-function: ease-in; }
+    .wan_e_out { transition-timing-function: ease-out; }
+    .wan_e_back { transition-timing-function: cubic-bezier(.68, -.55, .27, 1.55); }
+    .wan_race_bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 13px;
+    }
+    .wan_race_bar .wan_btn { flex: 0 0 auto; padding: 9px 20px; }
+    .wan_race_hint { font-size: 12px; color: #8b84a3; line-height: 1.6; }
+
+    /* ---------- 卡片墙 ---------- */
+    .wan_cards_bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      font-size: 12.5px;
+      color: #7b7495;
+    }
+    .wan_switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 12.5px;
+      color: #5d5679;
+    }
+    .wan_switch input {
+      appearance: none;
+      width: 38px;
+      height: 21px;
+      border-radius: 99px;
+      background: #dcd6ee;
+      position: relative;
+      cursor: pointer;
+      transition: background .2s;
+      outline: none;
+    }
+    .wan_switch input::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+      transition: transform .2s;
+    }
+    .wan_switch input:checked { background: var(--wan_violet); }
+    .wan_switch input:checked::after { transform: translateX(17px); }
+
+    .wan_wall {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .wan_ph {
+      position: relative;
+      display: block;
+      overflow: hidden;
+      border-radius: 13px;
+      background: #eee9fa;
+      text-decoration: none;
+      transition: transform .38s cubic-bezier(.25, .8, .35, 1), box-shadow .38s ease;
+    }
+    .wan_ph:hover {
+      transform: scale(1.08);
+      box-shadow: 0 20px 36px -20px rgba(60, 30, 140, .6);
+      z-index: 2;
+    }
+    .wan_ph img {
+      width: 100%;
+      height: 152px;
+      object-fit: cover;
+      display: block;
+      transition: transform .55s ease;
+    }
+    .wan_ph:hover img { transform: scale(1.04); }
+    .wan_ph_cap {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      padding: 26px 11px 9px;
+      background: linear-gradient(transparent, rgba(23, 14, 52, .82));
+      color: #fff;
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+      opacity: .92;
+      transform: translateY(5px);
+      transition: opacity .38s ease, transform .38s ease;
+    }
+    .wan_ph:hover .wan_ph_cap { opacity: 1; transform: none; }
+    .wan_ph_cap b { font-size: 12.5px; font-weight: 600; }
+    .wan_ph_cap i { font-style: normal; font-size: 10.5px; color: rgba(255, 255, 255, .66); }
+    .wan_wall.wan_off .wan_ph,
+    .wan_wall.wan_off .wan_ph img,
+    .wan_wall.wan_off .wan_ph_cap { transition: none !important; }
+
+    /* ---------- 六个坑 ---------- */
+    .wan_pits {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .wan_pit {
+      border: 1px solid var(--wan_line);
+      border-radius: 12px;
+      padding: 14px 15px;
+      background: var(--wan_card2);
+    }
+    .wan_pit_h {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #3d3759;
+      margin-bottom: 6px;
+    }
+    .wan_pit_h em {
+      flex: none;
+      font-style: normal;
+      font-family: var(--wan_mono);
+      font-size: 11px;
+      color: var(--wan_pink);
+      background: rgba(217, 78, 143, .1);
+      border-radius: 5px;
+      padding: 1px 6px;
+    }
+    .wan_pit p {
+      font-size: 12.5px;
+      line-height: 1.75;
+      color: #6b6585;
+    }
+    .wan_pit p code {
+      font-family: var(--wan_mono);
+      font-size: .92em;
+      background: rgba(109, 74, 255, .09);
+      color: var(--wan_violet_d);
+      border-radius: 4px;
+      padding: 1px 4px;
+    }
+
+    /* ---------- 页脚 ---------- */
+    .wan_foot {
+      max-width: 1080px;
+      margin: 22px auto 0;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 12.5px;
+      color: #9a94b0;
+    }
+    .wan_foot a {
+      color: var(--wan_violet);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      transition: background .2s;
+    }
+    .wan_foot a:hover { background: rgba(109, 74, 255, .08); }
+
+    /* ---------- 响应式 ---------- */
+    @media (max-width: 860px) {
+      .wan_lab { grid-template-columns: 1fr; }
+      .wan_genwrap { grid-template-columns: 1fr; }
+      .wan_wall { grid-template-columns: repeat(2, 1fr); }
+      .wan_pits { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 620px) {
+      .wan_top { padding-top: 18px; }
+      .wan_h1 { font-size: 21px; }
+      .wan_hero { padding: 20px; }
+      .wan_sec { padding: 18px 16px 20px; }
+      .wan_vs { grid-template-columns: 1fr; }
+      .wan_race_row { grid-template-columns: 1fr; gap: 7px; }
+      .wan_wall { grid-template-columns: 1fr; }
+      .wan_ph img { height: 170px; }
+      .wan_sec_h .wan_sec_note { display: none; }
+    }
+</style>
+</head>
+<body>
+
+<header class="wan_top">
+  <a class="wan_back" href="index.html">← 首页</a>
+  <div class="wan_topmain">
+    <h1 class="wan_h1">CSS transition 过渡 <span class="wan_tag">9-1</span></h1>
+    <p class="wan_sub">
+      当属性值发生变化，浏览器不是"啪"地切过去，而是在一段时间里<b>逐帧插值</b>，
+      这就是过渡。它只需要两个状态：<b>起始</b> 和 <b>结束</b>。
+    </p>
+  </div>
+</header>
+
+<main class="wan_wrap">
+
+  <section class="wan_hero">
+    <h2>四个参数，一条过渡</h2>
+    <p>
+      写过 <code style="background:rgba(255,255,255,.18);color:#fff;">transition: transform .4s ease .1s</code>
+      就够了，但只有真正拖过时长、延迟和缓动曲线，才知道那条"滑动"到底是怎么被算出来的。
+      下面 6 个板块，从对比、拆解、实验到踩坑，全部可以动手点。
+    </p>
+    <div class="wan_chips">
+      <span class="wan_chip">property</span>
+      <span class="wan_chip">duration</span>
+      <span class="wan_chip">timing-function</span>
+      <span class="wan_chip">delay</span>
+    </div>
+  </section>
+
+  <!-- ============ 01 ============ -->
+  <section class="wan_sec">
+    <div class="wan_sec_h">
+      <span class="wan_num">01</span>
+      <h2>先看差别：有过渡和没过渡</h2>
+      <span class="wan_sec_note">把鼠标移到两条进度条上</span>
+    </div>
+    <p class="wan_p">
+      两条进度条初始宽度都是 <b>16%</b>，悬停时都变成 <b>100%</b>。
+      左边没有写 <code>transition</code>，宽度瞬间跳过去；右边写了 <code>transition: width .85s</code>，
+      宽度在 0.85 秒内连续变化。眼睛看到的"顺滑"，本质就是中间被补出了几十个中间值。
+    </p>
+
+    <div class="wan_vs">
+      <div class="wan_vs_item">
+        <div class="wan_vs_h"><span class="wan_vs_dot" style="--c:#94a3b8;"></span>没有 transition</div>
+        <div class="wan_vs_track"><i class="wan_vs_fill"></i></div>
+        <div class="wan_vs_code">/* 无过渡 */</div>
+        <p class="wan_vs_p">宽度一次性跳到终点，视觉上只是一次闪烁。</p>
+      </div>
+      <div class="wan_vs_item">
+        <div class="wan_vs_h"><span class="wan_vs_dot" style="--c:#6d4aff;"></span>有 transition</div>
+        <div class="wan_vs_track"><i class="wan_vs_fill wan_vs_fill_b"></i></div>
+        <div class="wan_vs_code">transition: width .85s;</div>
+        <p class="wan_vs_p">中间值由浏览器补齐，鼠标移出时也会平滑地退回去。</p>
+      </div>
+    </div>
+
+    <div class="wan_tip">
+      <span class="wan_tip_i">要点</span>
+      <span>
+        <code>transition</code> 不产生动画，它只是规定"<b>当某个属性变的时候，慢一点变</b>"。
+        所以必须有一个状态变化（<code>:hover</code>、加 class、JS 改样式）来触发它。
+      </span>
+    </div>
+  </section>
+
+  <!-- ============ 02 ============ -->
+  <section class="wan_sec">
+    <div class="wan_sec_h">
+      <span class="wan_num">02</span>
+      <h2>语法拆开看：四个位置各管什么</h2>
+      <span class="wan_sec_note">简写顺序不能乱</span>
+    </div>
+
+    <pre class="wan_code"><code><span class="wan_c_sel">.wan_card</span> {
+  <span class="wan_c_p">transition</span>: <span class="wan_c_v">transform</span> <span class="wan_c_n">.4s</span> <span class="wan_c_f">ease</span> <span class="wan_c_n">.1s</span>;
+  <span class="wan_c_c">/*            属性      时长   缓动曲线  延迟 */</span>
+}</code></pre>
+
+    <div class="wan_tbwrap">
+      <table class="wan_tb">
+        <thead>
+          <tr><th>子属性</th><th>作用</th><th>默认值</th><th>常见取值</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>transition-property</td>
+            <td>对哪些属性做过渡</td>
+            <td>all</td>
+            <td>transform / opacity / width / all</td>
+          </tr>
+          <tr>
+            <td>transition-duration</td>
+            <td>从开始到结束用多久</td>
+            <td>0s（等于没有）</td>
+            <td>.2s / 400ms / 1s</td>
+          </tr>
+          <tr>
+            <td>transition-timing-function</td>
+            <td>中间值的速度曲线</td>
+            <td>ease</td>
+            <td>linear / ease-in / ease-out / cubic-bezier()</td>
+          </tr>
+          <tr>
+            <td>transition-delay</td>
+            <td>推迟多久才开始</td>
+            <td>0s</td>
+            <td>.1s / 1s</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="wan_tip">
+      <span class="wan_tip_i">注意</span>
+      <span>
+        只有"<b>能算出中间值</b>"的属性才能过渡，比如长度、颜色、<code>transform</code>、<code>opacity</code>。
+        <code>display</code>、<code>height: auto</code> 这类没有中间态的，写了也不生效。
+      </span>
+    </div>
+  </section>
+
+  <!-- ============ 03 ============ -->
+  <section class="wan_sec">
+    <div class="wan_sec_h">
+      <span class="wan_num">03</span>
+      <h2>动手实验：改三个参数，看同一个方块怎么变</h2>
+      <span class="wan_sec_note">参数修改后自动复位</span>
+    </div>
+    <p class="wan_p">
+      选一个要变化的属性，拖动时长和延迟，再换一条缓动曲线，点「开始过渡」。
+      右边的代码是当前参数对应的等价写法，下面还会实时显示 <code>transitionend</code> 事件。
+    </p>
+
+    <div class="wan_lab">
+      <div class="wan_lab_ctl">
+        <div class="wan_field">
+          <label for="wan_prop">变化属性</label>
+          <select id="wan_prop">
+            <option value="scale">放大 transform: scale()</option>
+            <option value="move">右移 transform: translateX()</option>
+            <option value="rotate">旋转 transform: rotate()</option>
+            <option value="radius">圆角 border-radius</option>
+            <option value="bg">背景色 background-color</option>
+            <option value="opacity">透明度 opacity</option>
+          </select>
+        </div>
+        <div class="wan_field">
+          <label for="wan_dur">时长 duration <b id="wan_durv">400ms</b></label>
+          <input type="range" id="wan_dur" min="0" max="2000" step="50" value="400">
+        </div>
+        <div class="wan_field">
+          <label for="wan_del">延迟 delay <b id="wan_delv">0ms</b></label>
+          <input type="range" id="wan_del" min="0" max="1200" step="50" value="0">
+        </div>
+        <div class="wan_field">
+          <label for="wan_ease">缓动曲线</label>
+          <select id="wan_ease">
+            <option value="ease">ease（默认）</option>
+            <option value="linear">linear 匀速</option>
+            <option value="ease-in">ease-in 慢起</option>
+            <option value="ease-out">ease-out 慢停</option>
+            <option value="ease-in-out">ease-in-out 两头慢</option>
+            <option value="cubic-bezier(.34, 1.56, .64, 1)">cubic-bezier 回弹</option>
+          </select>
+        </div>
+        <div class="wan_lab_btns">
+          <button class="wan_btn wan_btn_p" id="wan_go" type="button">开始过渡</button>
+          <button class="wan_btn" id="wan_reset" type="button">复位</button>
+        </div>
+      </div>
+
+      <div class="wan_lab_stage">
+        <div class="wan_play" id="wan_play"><span>wan_box</span></div>
+        <div class="wan_stage_note" id="wan_stage_note">设定参数后点「开始过渡」</div>
+      </div>
+    </div>
+
+    <div class="wan_genwrap">
+      <div>
+        <div class="wan_gen_h">等价 CSS（当前参数）</div>
+        <pre class="wan_code" id="wan_gen"></pre>
+      </div>
+      <div>
+        <div class="wan_gen_h">transitionend 事件</div>
+        <ul class="wan_tlog" id="wan_tlog">
+          <li class="wan_tlog_empty">过渡结束后，这里会出现一条记录。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 04 ============ -->
+  <section class="wan_sec">
+    <div class="wan_sec_h">
+      <span class="wan_num">04</span>
+      <h2>缓动曲线赛跑：同样的距离，不同的性格</h2>
+      <span class="wan_sec_note">1.5s 同时出发</span>
+    </div>
+    <p class="wan_p">
+      五颗球同时出发、同时到达，唯一的区别是 <code>transition-timing-function</code>。
+      曲线上每个点的斜率就是那一瞬间的速度：<b>斜率大 = 跑得快</b>。
+      回弹那条用了 <code>cubic-bezier(.68,-.55,.27,1.55)</code>，速度会先"倒车"再冲过头。
+    </p>
+
+    <div class="wan_race">
+      <div class="wan_race_rows" id="wan_race_rows">
+        <div class="wan_race_row">
+          <div class="wan_race_name">
+            <svg viewBox="-2 -4 84 48" aria-hidden="true">
+              <path d="M0 40 L80 0" fill="none" stroke="#6d4aff" stroke-width="2"/>
+              <line x1="0" y1="40" x2="80" y2="40" stroke="#ddd6f3" stroke-width="1"/>
+              <line x1="0" y1="40" x2="0" y2="0" stroke="#ddd6f3" stroke-width="1"/>
+            </svg>
+            <span>linear<br>匀速</span>
+          </div>
+          <div class="wan_race_track"><i class="wan_ball wan_e_linear" style="--c:#2563eb;"></i></div>
+        </div>
+        <div class="wan_race_row">
+          <div class="wan_race_name">
+            <svg viewBox="-2 -4 84 48" aria-hidden="true">
+              <path d="M0 40 C50 40 72 12 80 0" fill="none" stroke="#6d4aff" stroke-width="2"/>
+              <line x1="0" y1="40" x2="80" y2="40" stroke="#ddd6f3" stroke-width="1"/>
+            </svg>
+            <span>ease<br>默认</span>
+          </div>
+          <div class="wan_race_track"><i class="wan_ball wan_e_ease" style="--c:#6d4aff;"></i></div>
+        </div>
+        <div class="wan_race_row">
+          <div class="wan_race_name">
+            <svg viewBox="-2 -4 84 48" aria-hidden="true">
+              <path d="M0 40 C34 40 80 0 80 0" fill="none" stroke="#6d4aff" stroke-width="2"/>
+              <line x1="0" y1="40" x2="80" y2="40" stroke="#ddd6f3" stroke-width="1"/>
+            </svg>
+            <span>ease-in<br>慢起</span>
+          </div>
+          <div class="wan_race_track"><i class="wan_ball wan_e_in" style="--c:#d97706;"></i></div>
+        </div>
+        <div class="wan_race_row">
+          <div class="wan_race_name">
+            <svg viewBox="-2 -4 84 48" aria-hidden="true">
+              <path d="M0 40 C0 40 46 0 80 0" fill="none" stroke="#6d4aff" stroke-width="2"/>
+              <line x1="0" y1="40" x2="80" y2="40" stroke="#ddd6f3" stroke-width="1"/>
+            </svg>
+            <span>ease-out<br>慢停</span>
+          </div>
+          <div class="wan_race_track"><i class="wan_ball wan_e_out" style="--c:#0e9aa7;"></i></div>
+        </div>
+        <div class="wan_race_row">
+          <div class="wan_race_name">
+            <svg viewBox="-3 -26 88 72" aria-hidden="true">
+              <path d="M0 40 C54 62 -2 -22 80 0" fill="none" stroke="#d94e8f" stroke-width="2"/>
+              <line x1="0" y1="40" x2="80" y2="40" stroke="#ddd6f3" stroke-width="1"/>
+            </svg>
+            <span>回弹<br>overshoot</span>
+          </div>
+          <div class="wan_race_track"><i class="wan_ball wan_e_back" style="--c:#d94e8f;"></i></div>
+        </div>
+      </div>
+      <div class="wan_race_bar">
+        <button class="wan_btn wan_btn_p" id="wan_race_go" type="button">同时出发</button>
+        <span class="wan_race_hint">再点一次会从头重跑；曲线越陡的地方，球越快。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 05 ============ -->
+  <section class="wan_sec">
+    <div class="wan_sec_h">
+      <span class="wan_num">05</span>
+      <h2>作业升级版：九张卡片 hover 放大</h2>
+      <span class="wan_sec_note">原版只有 scale(1.08)</span>
+    </div>
+    <p class="wan_p">
+      原来的练习只写了一行 <code>.card:hover { transform: scale(1.08); }</code>，
+      加上 <code>transition</code> 以后放大才是"长出来"的，不是"跳出来"的。
+      这里再补了两层：图片自己缓慢微缩放，底部说明从遮罩里上浮。
+      把右上角的开关打开，能立刻对比出没有过渡的粗糙感。
+    </p>
+
+    <div class="wan_cards_bar">
+      <span>9 张卡片 · 悬停放大 1.08 倍 · 时长 0.38s</span>
+      <label class="wan_switch">
+        <input type="checkbox" id="wan_cards_off">
+        <span>关闭过渡（对比用）</span>
+      </label>
+    </div>
+
+    <div class="wan_wall" id="wan_wall">
+      <a class="wan_ph" href="#">
+        <img src="image/1.jpg" alt="卡片示例 1" loading="lazy">
+        <span class="wan_ph_cap"><b>作品 01</b><i>hover 放大</i></span>
+      </a>
+      <a class="wan_ph" href="#">
+        <img src="image/2.jpg" alt="卡片示例 2" loading="lazy">
+        <span class="wan_ph_cap"><b>作品 02</b><i>hover 放大</i></span>
+      </a>
+      <a class="wan_ph" href="#">
+        <img src="image/3.jpg" alt="卡片示例 3" loading="lazy">
+        <span class="wan_ph_cap"><b>作品 03</b><i>hover 放大</i></span>
+      </a>
+      <a class="wan_ph" href="#">
+        <img src="image/4.jpg" alt="卡片示例 4" loading="lazy">
+        <span class="wan_ph_cap"><b>作品 04</b><i>hover 放大</i></span>
+      </a>
+      <a class="wan_ph" href="#">
+        <img src="image/5.jpg" alt="卡片示例 5" loading="lazy">
+        <span class="wan_ph_cap"><b>作品 05</b><i>hover 放大</i></span>
+      </a>
+      <a class="wan_ph" href="#">
+        <img src="image/1.jpg" alt="卡片示例 6" loading="lazy">
+        <span class="wan_ph_cap"><b>作品 06</b><i>hover 放大</i></span>
+      </a>
+      <a class="wan_ph" href="#">
+        <img src="image/2.jpg" alt="卡片示例 7" loading="lazy">
+        <span class="wan_ph_cap"><b>作品 07</b><i>hover 放大</i></span>
+      </a>
+      <a class="wan_ph" href="#">
+        <img src="image/3.jpg" alt="卡片示例 8" loading="lazy">
+        <span class="wan_ph_cap"><b>作品 08</b><i>hover 放大</i></span>
+      </a>
+      <a class="wan_ph" href="#">
+        <img src="image/4.jpg" alt="卡片示例 9" loading="lazy">
+        <span class="wan_ph_cap"><b>作品 09</b><i>hover 放大</i></span>
+      </a>
+    </div>
+
+    <div class="wan_tip">
+      <span class="wan_tip_i">细节</span>
+      <span>
+        卡片放大会盖住相邻卡片，所以悬停时要给它一个 <code>z-index</code>；
+        放大倍数别超过 1.1，否则相邻卡片的边会被切得很难看。
+      </span>
+    </div>
+  </section>
+
+  <!-- ============ 06 ============ -->
+  <section class="wan_sec">
+    <div class="wan_sec_h">
+      <span class="wan_num">06</span>
+      <h2>六个必须知道的坑</h2>
+      <span class="wan_sec_note">踩过一次就记住了</span>
+    </div>
+
+    <div class="wan_pits">
+      <div class="wan_pit">
+        <div class="wan_pit_h"><em>01</em>过渡写在 hover 里</div>
+        <p>
+          写进 <code>:hover</code> 里，鼠标移出时规则失效，过渡跟着消失，元素会"啪"地弹回去。
+          正确做法是写在<b>常态</b>选择器上，hover 只负责改值。
+        </p>
+      </div>
+      <div class="wan_pit">
+        <div class="wan_pit_h"><em>02</em>display 不能过渡</div>
+        <p>
+          <code>display: none → block</code> 没有中间态。常用的替代是
+          <code>opacity</code> + <code>visibility</code>，或者配合 <code>height</code> 从 0 到定值。
+        </p>
+      </div>
+      <div class="wan_pit">
+        <div class="wan_pit_h"><em>03</em>height: auto 也不能过渡</div>
+        <p>
+          <code>auto</code> 是个"算不出来的长度"。要么写成固定高度，要么用
+          <code>max-height</code> 从 0 到足够大的值，要么交给 <code>grid-template-rows: 0fr → 1fr</code>。
+        </p>
+      </div>
+      <div class="wan_pit">
+        <div class="wan_pit_h"><em>04</em>别过渡 left / top</div>
+        <p>
+          改 <code>left</code>、<code>width</code> 会触发重排，掉帧明显。
+          位移和缩放优先用 <code>transform</code>，显隐和淡入淡出优先用 <code>opacity</code>，它们只走合成层。
+        </p>
+      </div>
+      <div class="wan_pit">
+        <div class="wan_pit_h"><em>05</em>它只管两个状态之间</div>
+        <p>
+          起始 → 结束，一条直线走完。想要中间变色、来回摆动、循环播放，
+          <code>transition</code> 做不到，得用 <code>@keyframes</code>（下一页 10-1）。
+        </p>
+      </div>
+      <div class="wan_pit">
+        <div class="wan_pit_h"><em>06</em>transitionend 会触发多次</div>
+        <p>
+          同时过渡三个属性，事件就派发三次。判断时用
+          <code>e.propertyName</code> 过滤，别在回调里重复执行同一段逻辑。
+        </p>
+      </div>
+    </div>
+
+    <div class="wan_tip">
+      <span class="wan_tip_i">延伸</span>
+      <span>
+        过渡的时长、延迟都支持逗号分组：
+        <code>transition: transform .3s ease, opacity .6s linear .1s;</code>
+        能分别控制每个属性，互不干扰。
+      </span>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wan_foot">
+  <a href="index.html">← 返回作品集首页</a>
+  <span>9-1 · CSS transition 过渡 · 万逸泽</span>
+  <a href="10-1.html">10-1 关键帧动画 →</a>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  function wan_id(id) { return document.getElementById(id); }
+
+  /* ================= 实验台 ================= */
+  var wan_defs = {
+    scale:   { prop: 'transform',        from: 'scale(1)',      to: 'scale(1.3)',               label: 'transform: scale(1.3)' },
+    move:    { prop: 'transform',        from: 'translateX(0)', to: 'translateX(96px)',         label: 'transform: translateX(96px)' },
+    rotate:  { prop: 'transform',        from: 'rotate(0deg)',  to: 'rotate(16deg) scale(1.06)', label: 'transform: rotate(16deg)' },
+    radius:  { prop: 'border-radius',    from: '20px',          to: '50%',                      label: 'border-radius: 50%' },
+    bg:      { prop: 'background-color', from: '#efeaff',       to: '#6d4aff',                  label: 'background-color: #6d4aff' },
+    opacity: { prop: 'opacity',          from: '1',             to: '0.3',                      label: 'opacity: 0.3' }
+  };
+
+  var wan_play = wan_id('wan_play');
+  var wan_gen = wan_id('wan_gen');
+  var wan_tlog = wan_id('wan_tlog');
+  var wan_logCount = 0;
+
+  function wan_state() {
+    return {
+      key: wan_id('wan_prop').value,
+      dur: Number(wan_id('wan_dur').value),
+      delay: Number(wan_id('wan_del').value),
+      ease: wan_id('wan_ease').value
+    };
+  }
+
+  function wan_clear(el) {
+    el.style.transform = '';
+    el.style.borderRadius = '';
+    el.style.backgroundColor = '';
+    el.style.opacity = '';
+  }
+
+  function wan_paintCode() {
+    var st = wan_state();
+    var d = wan_defs[st.key];
+    wan_gen.innerHTML =
+      '<span class="wan_c_sel">.wan_play</span> {\n' +
+      '  <span class="wan_c_p">transition</span>: <span class="wan_c_v">' + d.prop + '</span> ' +
+      '<span class="wan_c_n">' + st.dur + 'ms</span> <span class="wan_c_f">' + st.ease + '</span> ' +
+      '<span class="wan_c_n">' + st.delay + 'ms</span>;\n' +
+      '}\n\n' +
+      '<span class="wan_c_sel">.wan_play.wan_on</span> {\n' +
+      '  <span class="wan_c_p">' + d.prop + '</span>: <span class="wan_c_v">' + d.label.split(': ')[1] + '</span>;\n' +
+      '}';
+  }
+
+  function wan_reset(playNow) {
+    var st = wan_state();
+    var d = wan_defs[st.key];
+
+    wan_clear(wan_play);
+    wan_play.style.transition = 'none';
+    wan_play.style[d.prop] = d.from;
+    void wan_play.offsetWidth;
+    wan_play.style.transition =
+      d.prop + ' ' + st.dur + 'ms ' + st.ease + ' ' + st.delay + 'ms';
+
+    wan_id('wan_durv').textContent = st.dur + 'ms';
+    wan_id('wan_delv').textContent = st.delay + 'ms';
+    wan_paintCode();
+
+    if (playNow) {
+      void wan_play.offsetWidth;
+      wan_play.style.color = st.key === 'bg' ? '#fff' : '';
+      wan_play.style[d.prop] = d.to;
+      wan_id('wan_stage_note').textContent =
+        '过渡中：' + d.prop + ' → ' + d.label + '（' + st.dur + 'ms）';
+    } else {
+      wan_play.style.color = '';
+      wan_id('wan_stage_note').textContent = '已复位，点「开始过渡」看效果';
+    }
+  }
+
+  function wan_addLog(name, extra) {
+    if (wan_logCount === 0) { wan_tlog.innerHTML = ''; }
+    wan_logCount++;
+
+    var li = document.createElement('li');
+    li.className = 'wan_tlog_item';
+    li.innerHTML = '<b>transitionend</b><span>' + name + '</span><i>' + extra + '</i>';
+    wan_tlog.appendChild(li);
+
+    while (wan_tlog.children.length > 5) {
+      wan_tlog.removeChild(wan_tlog.firstChild);
+    }
+    wan_tlog.scrollTop = wan_tlog.scrollHeight;
+  }
+
+  wan_play.addEventListener('transitionend', function (e) {
+    wan_addLog(e.propertyName, Math.round(e.elapsedTime * 1000) + 'ms');
+    wan_id('wan_stage_note').textContent = '过渡结束：' + e.propertyName;
+  });
+
+  wan_id('wan_go').addEventListener('click', function () { wan_reset(true); });
+  wan_id('wan_reset').addEventListener('click', function () { wan_reset(false); });
+
+  ['wan_prop', 'wan_ease'].forEach(function (id) {
+    wan_id(id).addEventListener('change', function () { wan_reset(false); });
+  });
+  ['wan_dur', 'wan_del'].forEach(function (id) {
+    wan_id(id).addEventListener('input', function () { wan_reset(false); });
+  });
+
+  wan_reset(false);
+
+  /* ================= 缓动赛跑 ================= */
+  wan_id('wan_race_go').addEventListener('click', function () {
+    var rows = wan_id('wan_race_rows');
+    rows.classList.remove('wan_run');
+    void rows.offsetWidth;
+    rows.classList.add('wan_run');
+  });
+
+  /* ================= 卡片墙开关 ================= */
+  wan_id('wan_cards_off').addEventListener('change', function (e) {
+    wan_id('wan_wall').classList.toggle('wan_off', e.target.checked);
+  });
+})();
+</script>
+
+</body>
+</html>

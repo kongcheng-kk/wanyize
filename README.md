@@ -10,6 +10,8 @@
 
 | 页面 | 内容 | 在线地址 |
 | :--- | :--- | :--- |
+| **9-1** | CSS transition 过渡（时长 / 延迟 / 缓动曲线） | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/9-1.html) |
+| **10-1** | CSS animation 关键帧动画（变色盒子 / direction / steps） | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/10-1.html) |
 | **15-1** | 逢 7 过 · 一百个盒子 | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/15-1.html) |
 | **15-2** | JavaScript 程序结构（顺序 / 条件 / 循环） | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/15-2.html) |
 | **17-4** | 远程接口测试台（GET / POST / PUT / PATCH / DELETE） | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/17-4.html) |
@@ -25,10 +27,12 @@
 
 ## 文件说明
 
+- `9-1.html` —— CSS transition 过渡：有无过渡的对比、四个子属性拆解、可调时长/延迟/缓动的实验台（含 transitionend 日志）、五条缓动曲线赛跑、九张卡片 hover 放大与六个常见坑
+- `10-1.html` —— CSS animation 关键帧动画：可暂停/变速/单次播放的变色盒子、@keyframes 时间轴、八个 animation 子属性、direction 四种跑法、steps() 逐帧与打字机、fill-mode 四种取值对比
 - `15-1.html` —— 100 个盒子，按「7 的倍数 / 个位是 7 / 十位是 7」三条规则筛出空盒子
 - `15-2.html` —— JavaScript 三种基本控制结构演示：顺序、条件（if / switch / 三元）、循环（for / while / do…while / for…of / break / continue / 嵌套）
 - `17-4.html` —— 远程接口测试台：切换 GET / POST / PUT / PATCH / DELETE，自定义请求体与地址，展示状态码、耗时、响应头、JSON 高亮、错误提示与请求历史
 - `17-5.html` —— JavaScript 的两种定时器：setTimeout 圆环倒计时与 clearTimeout 取消、setInterval 秒表与 clearInterval 暂停、0ms 定时器的事件循环顺序、setInterval 任务堆叠与递归 setTimeout 的甘特图对比
 - `17-6.html` —— Promise 与 async/await 演示包饺子流程：先买原料，再用 `Promise.all` 让和面、和馅同时进行，附实时时间轴、运行日志、错误补救与串行/并行耗时对比
 
-每个页面都是自包含的单文件，CSS 与 JavaScript 全部内嵌，不依赖任何外部资源。
+每个页面都是自包含的单文件，CSS 与 JavaScript 全部内嵌；图片放在 `image/`，图标字体与库放在 `cdn/`，均以相对路径引用。
