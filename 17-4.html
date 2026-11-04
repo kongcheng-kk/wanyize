@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  文件：17-4.html
+  作者：万逸泽（学号 24001010412）
+  建立时间：2026-11-02 14:36
+  使用的大模型：deepseek-v4.1-flash
+  提示词：
+    成 17-4.html，对远程数据接口进行测试，支持 get、post 等，显示返回的数据和错误提示信息，
+    post 接口：https://jsonplaceholder.typicode.com/posts
+    成 17-5.html，展示 javascript 的两种定时器。
+    成 17-6.html，使用 promise 和 async 完成异步操作的演示包饺子的流程。先买原料，买完原料之后同时和面、和陷
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>17-4 远程接口测试台 · GET / POST / PUT / PATCH / DELETE</title>
+<style>
+    :root {
+      --wan_bg: #0b1120;
+      --wan_panel: #121b2d;
+      --wan_panel2: #0e1626;
+      --wan_line: #22314b;
+      --wan_txt: #e7eefc;
+      --wan_dim: #92a4c0;
+      --wan_accent: #22d3ee;
+      --wan_ok: #34d399;
+      --wan_warn: #fbbf24;
+      --wan_bad: #f87171;
+      --wan_mono: Consolas, "Cascadia Code", Menlo, "Courier New", monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(900px 520px at 12% -12%, rgba(34, 211, 238, .16), transparent 62%),
+        radial-gradient(760px 420px at 96% 0%, rgba(129, 140, 248, .14), transparent 58%),
+        var(--wan_bg);
+      color: var(--wan_txt);
+      min-height: 100vh;
+      padding-bottom: 56px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- 顶部 ---------- */
+    .wan_top {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 26px 18px 6px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .wan_back {
+      flex: 0 0 auto;
+      margin-top: 4px;
+      color: var(--wan_cyan-2, #a5f3fc);
+      text-decoration: none;
+      font-size: 13px;
+      border: 1px solid rgba(34, 211, 238, .35);
+      background: rgba(34, 211, 238, .08);
+      padding: 7px 12px;
+      border-radius: 8px;
+      transition: .2s;
+      white-space: nowrap;
+    }
+    .wan_back:hover { background: rgba(34, 211, 238, .18); transform: translateX(-2px); }
+    .wan_topmain { flex: 1; min-width: 0; }
+    .wan_topmain h1 {
+      font-size: 25px;
+      letter-spacing: .5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .wan_tag17 {
+      font: 700 12px/1 var(--wan_mono);
+      color: #06202a;
+      background: linear-gradient(135deg, #22d3ee, #67e8f9);
+      padding: 6px 8px;
+      border-radius: 6px;
+      letter-spacing: .5px;
+    }
+    .wan_topmain p {
+      margin-top: 8px;
+      color: var(--wan_dim);
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    .wan_topmain code {
+      font-family: var(--wan_mono);
+      color: #7dd3fc;
+      background: rgba(125, 211, 252, .1);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 12.5px;
+    }
+
+    .wan_wrap { max-width: 1080px; margin: 0 auto; padding: 16px 18px 0; }
+
+    .wan_panel {
+      background: linear-gradient(180deg, rgba(255, 255, 255, .025), rgba(255, 255, 255, 0)) , var(--wan_panel);
+      border: 1px solid var(--wan_line);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, .22);
+    }
+    .wan_panel + .wan_panel { margin-top: 16px; }
+
+    /* ---------- 请求行 ---------- */
+    .wan_reqrow {
+      display: grid;
+      grid-template-columns: 116px 1fr 104px;
+      gap: 10px;
+    }
+    .wan_method, .wan_url, .wan_btn {
+      font-family: var(--wan_mono);
+      font-size: 13.5px;
+      border-radius: 9px;
+      border: 1px solid var(--wan_line);
+      background: var(--wan_panel2);
+      color: var(--wan_txt);
+      height: 44px;
+      outline: none;
+      transition: .18s;
+    }
+    .wan_method {
+      padding: 0 10px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--wan_accent);
+      letter-spacing: .5px;
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, var(--wan_dim) 50%),
+                        linear-gradient(135deg, var(--wan_dim) 50%, transparent 50%);
+      background-position: calc(100% - 16px) 19px, calc(100% - 11px) 19px;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+    .wan_url { padding: 0 13px; width: 100%; }
+    .wan_method:focus, .wan_url:focus {
+      border-color: rgba(34, 211, 238, .65);
+      box-shadow: 0 0 0 3px rgba(34, 211, 238, .12);
+    }
+    .wan_btn {
+      cursor: pointer;
+      background: linear-gradient(135deg, #0891b2, #22d3ee);
+      border-color: transparent;
+      color: #04222b;
+      font-weight: 700;
+      letter-spacing: .5px;
+    }
+    .wan_btn:hover { filter: brightness(1.08); }
+    .wan_btn:active { transform: scale(.98); }
+    .wan_btn[disabled] { opacity: .55; cursor: progress; }
+    .wan_btn_ghost {
+      height: 32px;
+      padding: 0 12px;
+      font: 500 12.5px/1 var(--wan_mono);
+      color: var(--wan_dim);
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid var(--wan_line);
+      border-radius: 7px;
+      cursor: pointer;
+    }
+    .wan_btn_ghost:hover { color: var(--wan_txt); border-color: #3a4d6d; }
+
+    /* ---------- 预设 ---------- */
+    .wan_presets {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      align-items: center;
+    }
+    .wan_presets_tip {
+      font-size: 12px;
+      color: #64748b;
+      margin-right: 2px;
+      letter-spacing: .3px;
+    }
+    .wan_pill {
+      font: 500 12px/1 var(--wan_mono);
+      color: var(--wan_dim);
+      background: rgba(255, 255, 255, .035);
+      border: 1px solid var(--wan_line);
+      padding: 7px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: .16s;
+    }
+    .wan_pill:hover { color: var(--wan_txt); border-color: #3d557a; background: rgba(34, 211, 238, .08); }
+    .wan_pill i {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor;
+      display: block;
+    }
+    .wan_pill[data-m="GET"] { color: #6ee7b7; }
+    .wan_pill[data-m="POST"] { color: #fbbf24; }
+    .wan_pill[data-m="PUT"] { color: #93c5fd; }
+    .wan_pill[data-m="PATCH"] { color: #c4b5fd; }
+    .wan_pill[data-m="DELETE"] { color: #fca5a5; }
+
+    /* ---------- 请求体 ---------- */
+    .wan_bodybox { margin-top: 14px; }
+    .wan_bodyhead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .wan_bodyhead span {
+      font-size: 12.5px;
+      color: var(--wan_dim);
+      font-family: var(--wan_mono);
+      letter-spacing: .4px;
+    }
+    .wan_tools { display: flex; gap: 7px; }
+    .wan_body {
+      width: 100%;
+      min-height: 132px;
+      resize: vertical;
+      font: 13px/1.7 var(--wan_mono);
+      color: #d7e6ff;
+      background: var(--wan_panel2);
+      border: 1px solid var(--wan_line);
+      border-radius: 10px;
+      padding: 12px 13px;
+      outline: none;
+      tab-size: 2;
+    }
+    .wan_body:focus { border-color: rgba(34, 211, 238, .5); }
+    .wan_body[disabled] { opacity: .45; cursor: not-allowed; }
+    .wan_hint {
+      margin-top: 7px;
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.6;
+    }
+    .wan_hint b { color: #94a3b8; font-weight: 600; }
+
+    /* ---------- 响应 ---------- */
+    .wan_resphead {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--wan_line);
+    }
+    .wan_methodtag {
+      font: 700 11.5px/1 var(--wan_mono);
+      padding: 6px 8px;
+      border-radius: 6px;
+      letter-spacing: .6px;
+      background: rgba(251, 191, 36, .16);
+      color: #fbbf24;
+    }
+    .wan_methodtag[data-m="GET"] { background: rgba(52, 211, 153, .14); color: #34d399; }
+    .wan_methodtag[data-m="PUT"] { background: rgba(147, 197, 253, .14); color: #93c5fd; }
+    .wan_methodtag[data-m="PATCH"] { background: rgba(196, 181, 253, .14); color: #c4b5fd; }
+    .wan_methodtag[data-m="DELETE"] { background: rgba(252, 165, 165, .14); color: #fca5a5; }
+    .wan_requrl {
+      flex: 1;
+      min-width: 200px;
+      font: 12.5px/1.5 var(--wan_mono);
+      color: #8fa6c4;
+      word-break: break-all;
+    }
+    .wan_stats {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 12px 0 4px;
+      font-size: 12.5px;
+      color: var(--wan_dim);
+    }
+    .wan_stats b { color: var(--wan_txt); font-family: var(--wan_mono); font-weight: 600; }
+    .wan_code {
+      font: 700 13px/1 var(--wan_mono);
+      padding: 7px 10px;
+      border-radius: 7px;
+      background: rgba(148, 163, 184, .16);
+      color: #cbd5e1;
+      letter-spacing: .4px;
+    }
+    .wan_code_ok { background: rgba(52, 211, 153, .15); color: #34d399; }
+    .wan_code_mid { background: rgba(251, 191, 36, .15); color: #fbbf24; }
+    .wan_code_bad { background: rgba(248, 113, 113, .15); color: #f87171; }
+
+    .wan_tabs {
+      display: flex;
+      gap: 4px;
+      margin: 12px 0 10px;
+      border-bottom: 1px solid var(--wan_line);
+      flex-wrap: wrap;
+    }
+    .wan_tab {
+      font: 500 12.5px/1 var(--wan_mono);
+      color: var(--wan_dim);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 10px 12px;
+      cursor: pointer;
+      letter-spacing: .3px;
+    }
+    .wan_tab:hover { color: var(--wan_txt); }
+    .wan_tab_on { color: var(--wan_accent); border-bottom-color: var(--wan_accent); }
+
+    .wan_pane pre {
+      margin: 0;
+      max-height: 430px;
+      overflow: auto;
+      background: #080e19;
+      border: 1px solid #1b273d;
+      border-radius: 10px;
+      padding: 14px 15px;
+      font: 12.8px/1.72 var(--wan_mono);
+      color: #cfe0f5;
+      white-space: pre;
+      tab-size: 2;
+    }
+    .wan_pane pre::-webkit-scrollbar { height: 9px; width: 9px; }
+    .wan_pane pre::-webkit-scrollbar-thumb { background: #26344c; border-radius: 5px; }
+    .wan_key { color: #7dd3fc; }
+    .wan_str { color: #86efac; }
+    .wan_num { color: #fdba74; }
+    .wan_bool { color: #c4b5fd; }
+    .wan_null { color: #94a3b8; font-style: italic; }
+    .wan_punc { color: #64748b; }
+
+    .wan_empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 180px;
+      color: #55688a;
+      font-size: 13px;
+      border: 1px dashed #24344e;
+      border-radius: 10px;
+      background: #0a1120;
+    }
+    .wan_empty b { color: #93a4bf; font-size: 14px; }
+
+    .wan_htable { width: 100%; border-collapse: collapse; font: 12.5px/1.6 var(--wan_mono); }
+    .wan_htable th {
+      text-align: left;
+      width: 34%;
+      color: #7dd3fc;
+      font-weight: 600;
+      padding: 8px 12px;
+      background: rgba(125, 211, 252, .06);
+      border-bottom: 1px solid #1b273d;
+      vertical-align: top;
+      word-break: break-all;
+    }
+    .wan_htable td {
+      color: #b9cbe3;
+      padding: 8px 12px;
+      border-bottom: 1px solid #16213344;
+      word-break: break-all;
+    }
+    .wan_htable tr:hover td, .wan_htable tr:hover th { background: rgba(148, 163, 184, .05); }
+    .wan_htable_wrap {
+      max-height: 430px;
+      overflow: auto;
+      background: #080e19;
+      border: 1px solid #1b273d;
+      border-radius: 10px;
+    }
+
+    /* ---------- 错误 ---------- */
+    .wan_error {
+      margin: 12px 0 0;
+      border: 1px solid rgba(248, 113, 113, .45);
+      background: rgba(248, 113, 113, .07);
+      border-radius: 10px;
+      padding: 13px 15px;
+    }
+    .wan_error h3 {
+      font-size: 13.5px;
+      color: #fca5a5;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 700;
+    }
+    .wan_error h3::before {
+      content: "!";
+      width: 17px; height: 17px;
+      border-radius: 50%;
+      background: #f87171;
+      color: #2a0a0a;
+      font: 700 12px/17px var(--wan_mono);
+      text-align: center;
+    }
+    .wan_error p {
+      margin-top: 7px;
+      font: 12.8px/1.7 var(--wan_mono);
+      color: #fecaca;
+      word-break: break-word;
+    }
+    .wan_error .wan_errorhint { color: #9fb2cc; font-family: -apple-system, "Microsoft YaHei", sans-serif; font-size: 12.5px; }
+
+    .wan_note {
+      margin-top: 12px;
+      font-size: 12px;
+      line-height: 1.75;
+      color: #7c8fab;
+      background: rgba(34, 211, 238, .05);
+      border-left: 3px solid rgba(34, 211, 238, .5);
+      padding: 9px 12px;
+      border-radius: 0 8px 8px 0;
+    }
+    .wan_note b { color: #a5f3fc; font-weight: 600; }
+    .wan_note code { font-family: var(--wan_mono); color: #7dd3fc; }
+
+    /* ---------- 历史 ---------- */
+    .wan_hist_title {
+      font-size: 13px;
+      color: var(--wan_dim);
+      font-weight: 600;
+      letter-spacing: .5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .wan_hist_title small { color: #55688a; font-weight: 400; font-family: var(--wan_mono); }
+    .wan_histlist { list-style: none; margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+    .wan_hist {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font: 12.3px/1.4 var(--wan_mono);
+      padding: 9px 11px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .025);
+      border: 1px solid #1b273d;
+      cursor: pointer;
+      transition: .15s;
+      flex-wrap: wrap;
+    }
+    .wan_hist:hover { border-color: #33496b; background: rgba(34, 211, 238, .06); }
+    .wan_hist .wan_hm { font-weight: 700; color: #fbbf24; width: 62px; }
+    .wan_hist .wan_hm[data-m="GET"] { color: #34d399; }
+    .wan_hist .wan_hm[data-m="PUT"] { color: #93c5fd; }
+    .wan_hist .wan_hm[data-m="PATCH"] { color: #c4b5fd; }
+    .wan_hist .wan_hm[data-m="DELETE"] { color: #fca5a5; }
+    .wan_hist .wan_hu { flex: 1; min-width: 150px; color: #9fb2cc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wan_hist .wan_hc { font-weight: 700; }
+    .wan_hist .wan_hc.wan_hc_ok { color: #34d399; }
+    .wan_hist .wan_hc.wan_hc_bad { color: #f87171; }
+    .wan_hist .wan_ht { color: #55688a; width: 62px; text-align: right; }
+    .wan_histempty { color: #55688a; font-size: 12.5px; margin-top: 10px; }
+
+    .wan_footer {
+      max-width: 1080px;
+      margin: 22px auto 0;
+      padding: 0 20px;
+      color: #55688a;
+      font-size: 12px;
+      line-height: 1.8;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .wan_footer a { color: #7dd3fc; text-decoration: none; }
+    .wan_footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 720px) {
+      .wan_reqrow { grid-template-columns: 96px 1fr; }
+      .wan_btn { grid-column: 1 / -1; }
+      .wan_topmain h1 { font-size: 21px; }
+      .wan_presets_tip { width: 100%; }
+      .wan_hist .wan_hu { min-width: 100%; order: 3; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="wan_top">
+  <a class="wan_back" href="index.html">← 返回首页</a>
+  <div class="wan_topmain">
+    <h1>远程接口测试台 <span class="wan_tag17">17-4</span></h1>
+    <p>在浏览器里直接发请求：支持 <code>GET</code> <code>POST</code> <code>PUT</code> <code>PATCH</code> <code>DELETE</code>，
+      展示返回的数据、响应头、耗时与错误信息。接口来自 jsonplaceholder，已开放跨域（CORS）。</p>
+  </div>
+</header>
+
+<main class="wan_wrap">
+
+  <!-- 请求配置 -->
+  <section class="wan_panel">
+    <div class="wan_reqrow">
+      <select class="wan_method" id="wan_method" aria-label="请求方法">
+        <option>GET</option>
+        <option selected>POST</option>
+        <option>PUT</option>
+        <option>PATCH</option>
+        <option>DELETE</option>
+      </select>
+      <input class="wan_url" id="wan_url" type="text" spellcheck="false"
+             value="https://jsonplaceholder.typicode.com/posts"
+             placeholder="https://jsonplaceholder.typicode.com/posts" aria-label="接口地址">
+      <button class="wan_btn" id="wan_send" type="button">发送请求</button>
+    </div>
+
+    <div class="wan_presets" id="wan_presets">
+      <span class="wan_presets_tip">快捷用例：</span>
+    </div>
+
+    <div class="wan_bodybox">
+      <div class="wan_bodyhead">
+        <span>请求体（JSON）</span>
+        <div class="wan_tools">
+          <button class="wan_btn_ghost" id="wan_format" type="button">格式化</button>
+          <button class="wan_btn_ghost" id="wan_clearbody" type="button">清空</button>
+        </div>
+      </div>
+      <textarea class="wan_body" id="wan_body" spellcheck="false"></textarea>
+      <p class="wan_hint" id="wan_bodyhint">POST / PUT / PATCH 会携带请求体，并自动加上
+        <b>Content-Type: application/json</b>；GET / DELETE 不发送请求体。</p>
+    </div>
+  </section>
+
+  <!-- 响应 -->
+  <section class="wan_panel">
+    <div class="wan_resphead">
+      <span class="wan_methodtag" id="wan_methodtag">POST</span>
+      <span class="wan_requrl" id="wan_requrl">https://jsonplaceholder.typicode.com/posts</span>
+      <button class="wan_btn_ghost" id="wan_copy" type="button">复制响应</button>
+    </div>
+
+    <div class="wan_stats">
+      <span>状态码 <b><span class="wan_code" id="wan_code">—</span></b></span>
+      <span>耗时 <b id="wan_time">—</b></span>
+      <span>大小 <b id="wan_size">—</b></span>
+      <span>方式 <b id="wan_st_method">—</b></span>
+      <span>内容类型 <b id="wan_st_type">—</b></span>
+    </div>
+
+    <div class="wan_error" id="wan_error" hidden>
+      <h3>请求失败</h3>
+      <p id="wan_errormsg"></p>
+      <p class="wan_errorhint" id="wan_errorhint"></p>
+    </div>
+
+    <div class="wan_tabs" id="wan_tabs">
+      <button class="wan_tab wan_tab_on" type="button" data-pane="body">响应数据</button>
+      <button class="wan_tab" type="button" data-pane="headers">响应头</button>
+      <button class="wan_tab" type="button" data-pane="sent">请求体</button>
+      <button class="wan_tab" type="button" data-pane="raw">原始文本</button>
+    </div>
+
+    <div class="wan_pane" id="wan_pane_body">
+      <pre id="wan_json"><code id="wan_json_code">等待发送请求…</code></pre>
+    </div>
+    <div class="wan_pane" id="wan_pane_headers" hidden>
+      <div class="wan_htable_wrap">
+        <table class="wan_htable">
+          <thead>
+            <tr><th>响应头</th><th>值</th></tr>
+          </thead>
+          <tbody id="wan_htbody">
+            <tr><td colspan="2" style="color:#55688a">暂无响应头</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="wan_pane" id="wan_pane_sent" hidden>
+      <pre id="wan_sent">（本次请求没有请求体）</pre>
+    </div>
+    <div class="wan_pane" id="wan_pane_raw" hidden>
+      <pre id="wan_raw">（暂无响应文本）</pre>
+    </div>
+
+    <p class="wan_note">
+      <b>说明：</b>请求由浏览器 <code>fetch()</code> 直接发出，跨域时需要对方服务器返回
+      <code>Access-Control-Allow-Origin</code>。jsonplaceholder 已允许任意来源，所以本地双击打开本页也能正常请求。
+      <code>4xx / 5xx</code> 不算网络异常，仍会返回数据，本页会同时给出红色状态码和错误面板。
+    </p>
+  </section>
+
+  <!-- 历史 -->
+  <section class="wan_panel">
+    <h2 class="wan_hist_title">请求历史 <small id="wan_histcount">0 条</small></h2>
+    <ul class="wan_histlist" id="wan_histlist"></ul>
+    <p class="wan_histempty" id="wan_histempty">还没有记录，发送一次请求试试。</p>
+  </section>
+
+</main>
+
+<footer class="wan_footer">
+  <span>《高级网页设计》第 17 章 · 异步与接口 · 万逸泽 24001010412</span>
+  <span><a href="index.html">返回作品集首页</a></span>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var wan_$ = function (id) { return document.getElementById(id); };
+
+  var WAN_BASE = 'https://jsonplaceholder.typicode.com';
+  var WAN_POST = WAN_BASE + '/posts';
+
+  var wan_bodyTpl = {
+    post: [
+      '{',
+      '  "title": "万逸泽的测试文章",',
+      '  "body": "这条数据由 17-4 接口测试台通过 POST 发送",',
+      '  "userId": 412',
+      '}'
+    ].join('\n'),
+    put: [
+      '{',
+      '  "id": 1,',
+      '  "title": "把第 1 篇文章整体替换",',
+      '  "body": "PUT 用于整体更新，未提供的字段会被覆盖",',
+      '  "userId": 412',
+      '}'
+    ].join('\n'),
+    patch: [
+      '{',
+      '  "title": "只改标题（PATCH 局部更新）"',
+      '}'
+    ].join('\n')
+  };
+
+  var wan_presets = [
+    { label: 'GET 列表', method: 'GET', url: WAN_BASE + '/posts?_limit=5', body: '' },
+    { label: 'GET 单条', method: 'GET', url: WAN_BASE + '/posts/1', body: '' },
+    { label: 'POST 新建', method: 'POST', url: WAN_POST, body: wan_bodyTpl.post },
+    { label: 'PUT 更新', method: 'PUT', url: WAN_BASE + '/posts/1', body: wan_bodyTpl.put },
+    { label: 'PATCH 局部', method: 'PATCH', url: WAN_BASE + '/posts/1', body: wan_bodyTpl.patch },
+    { label: 'DELETE 删除', method: 'DELETE', url: WAN_BASE + '/posts/1', body: '' },
+    { label: '404 错误', method: 'GET', url: WAN_BASE + '/posts/99999', body: '' },
+    { label: '网络错误', method: 'GET', url: 'https://no-such-host-wan.invalid/api', body: '' }
+  ];
+
+  var wan_state = {
+    busy: false,
+    raw: '',
+    lastMethod: 'POST',
+    lastUrl: WAN_POST,
+    history: []
+  };
+
+  /* ---------- 工具 ---------- */
+
+  function wan_escape(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  /* JSON 语法高亮：逐字符扫描，避免转义后引号失配 */
+  function wan_jsonHtml(text) {
+    var out = '', i = 0, n = text.length, m, ch;
+    while (i < n) {
+      ch = text.charAt(i);
+      if (ch === '"') {
+        var j = i + 1, buf = '"';
+        while (j < n) {
+          var c = text.charAt(j);
+          if (c === '\\') {
+            buf += c + text.charAt(j + 1);
+            j += 2;
+            continue;
+          }
+          buf += c;
+          j++;
+          if (c === '"') { break; }
+        }
+        var k = j;
+        while (k < n && /\s/.test(text.charAt(k))) { k++; }
+        var isKey = text.charAt(k) === ':';
+        out += '<span class="' + (isKey ? 'wan_key' : 'wan_str') + '">' + wan_escape(buf) + '</span>';
+        i = j;
+      } else if (ch === '-' || (ch >= '0' && ch <= '9')) {
+        m = /^-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?/.exec(text.slice(i));
+        if (m) {
+          out += '<span class="wan_num">' + m[0] + '</span>';
+          i += m[0].length;
+        } else {
+          out += wan_escape(ch);
+          i++;
+        }
+      } else if (text.substr(i, 4) === 'true' || text.substr(i, 5) === 'false' || text.substr(i, 4) === 'null') {
+        m = /^(true|false|null)/.exec(text.slice(i));
+        var cls = m[1] === 'null' ? 'wan_null' : 'wan_bool';
+        out += '<span class="' + cls + '">' + m[1] + '</span>';
+        i += m[1].length;
+      } else if (ch === '{' || ch === '}' || ch === '[' || ch === ']' || ch === ',' || ch === ':') {
+        out += '<span class="wan_punc">' + wan_escape(ch) + '</span>';
+        i++;
+      } else {
+        out += wan_escape(ch);
+        i++;
+      }
+    }
+    return out;
+  }
+
+  function wan_now() {
+    return (window.performance && window.performance.now) ? window.performance.now() : Date.now();
+  }
+
+  function wan_bytes(text) {
+    if (window.Blob) { return new Blob([text]).size; }
+    return text.length;
+  }
+
+  function wan_fmtBytes(n) {
+    if (n < 1024) { return n + ' B'; }
+    return (n / 1024).toFixed(1) + ' KB';
+  }
+
+  function wan_setCode(code) {
+    var el = wan_$('wan_code');
+    if (code === 'ERR') {
+      el.textContent = 'ERR';
+      el.className = 'wan_code wan_code_bad';
+      return;
+    }
+    el.textContent = String(code);
+    if (code >= 200 && code < 300) { el.className = 'wan_code wan_code_ok'; }
+    else if (code >= 300 && code < 400) { el.className = 'wan_code wan_code_mid'; }
+    else { el.className = 'wan_code wan_code_bad'; }
+  }
+
+  function wan_showError(msg, hint) {
+    wan_$('wan_errormsg').textContent = msg;
+    wan_$('wan_errorhint').textContent = hint || '';
+    wan_$('wan_error').hidden = false;
+  }
+
+  function wan_hideError() {
+    wan_$('wan_error').hidden = true;
+  }
+
+  function wan_setBusy(busy) {
+    wan_state.busy = busy;
+    var btn = wan_$('wan_send');
+    btn.disabled = busy;
+    btn.textContent = busy ? '请求中…' : '发送请求';
+  }
+
+  function wan_bodyEnabled(method) {
+    var needBody = method !== 'GET' && method !== 'HEAD';
+    var box = wan_$('wan_body');
+    box.disabled = !needBody;
+    wan_$('wan_bodyhint').innerHTML = needBody
+      ? 'POST / PUT / PATCH 会携带请求体，并自动加上 <b>Content-Type: application/json</b>；发送前会先校验 JSON 格式。'
+      : '当前是 <b>' + method + '</b> 请求，不发送请求体（输入框已禁用并保持内容不变）。';
+  }
+
+  function wan_paintMethod(method) {
+    wan_$('wan_methodtag').textContent = method;
+    wan_$('wan_methodtag').setAttribute('data-m', method);
+    wan_$('wan_st_method').textContent = method;
+    wan_$('wan_requrl').textContent = wan_$('wan_url').value.trim();
+  }
+
+  /* ---------- 标签页 ---------- */
+
+  function wan_switchPane(name) {
+    ['body', 'headers', 'sent', 'raw'].forEach(function (key) {
+      wan_$('wan_pane_' + key).hidden = key !== name;
+    });
+    Array.prototype.forEach.call(wan_$('wan_tabs').querySelectorAll('.wan_tab'), function (tab) {
+      tab.classList.toggle('wan_tab_on', tab.getAttribute('data-pane') === name);
+    });
+  }
+
+  /* ---------- 请求历史 ---------- */
+
+  function wan_log(method, url, code, ms) {
+    wan_state.history.unshift({ method: method, url: url, code: code, ms: ms });
+    if (wan_state.history.length > 8) { wan_state.history.pop(); }
+    wan_renderHistory();
+  }
+
+  function wan_renderHistory() {
+    var list = wan_$('wan_histlist');
+    var items = wan_state.history;
+    wan_$('wan_histcount').textContent = items.length + ' 条';
+    wan_$('wan_histempty').hidden = items.length > 0;
+    list.innerHTML = items.map(function (h, idx) {
+      var ok = (typeof h.code === 'number' && h.code < 400);
+      return '<li class="wan_hist" data-idx="' + idx + '">' +
+        '<span class="wan_hm" data-m="' + wan_escape(h.method) + '">' + wan_escape(h.method) + '</span>' +
+        '<span class="wan_hu">' + wan_escape(h.url) + '</span>' +
+        '<span class="wan_hc ' + (ok ? 'wan_hc_ok' : 'wan_hc_bad') + '">' + wan_escape(String(h.code)) + '</span>' +
+        '<span class="wan_ht">' + h.ms + ' ms</span>' +
+        '</li>';
+    }).join('');
+  }
+
+  wan_$('wan_histlist').addEventListener('click', function (e) {
+    var li = e.target.closest ? e.target.closest('.wan_hist') : null;
+    if (!li) { return; }
+    var item = wan_state.history[Number(li.getAttribute('data-idx'))];
+    if (!item) { return; }
+    wan_$('wan_url').value = item.url;
+    wan_$('wan_method').value = item.method;
+    wan_bodyEnabled(item.method);
+    wan_paintMethod(item.method);
+  });
+
+  /* ---------- 预设按钮 ---------- */
+
+  function wan_buildPresets() {
+    var box = wan_$('wan_presets');
+    wan_presets.forEach(function (p) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'wan_pill';
+      btn.setAttribute('data-m', p.method);
+      btn.innerHTML = '<i></i>' + wan_escape(p.label);
+      btn.addEventListener('click', function () {
+        wan_$('wan_method').value = p.method;
+        wan_$('wan_url').value = p.url;
+        wan_$('wan_body').value = p.body;
+        wan_bodyEnabled(p.method);
+        wan_paintMethod(p.method);
+        wan_$('wan_body').value = p.body;
+      });
+      box.appendChild(btn);
+    });
+  }
+
+  /* ---------- 发送 ---------- */
+
+  async function wan_send() {
+    if (wan_state.busy) { return; }
+
+    var method = wan_$('wan_method').value;
+    var url = wan_$('wan_url').value.trim();
+    var bodyText = wan_$('wan_body').value.trim();
+    var needBody = method !== 'GET' && method !== 'HEAD';
+
+    if (!url) {
+      wan_setCode('ERR');
+      wan_showError('接口地址为空', '请填写完整 URL，例如 ' + WAN_POST);
+      return;
+    }
+    if (!/^https?:\/\//i.test(url)) {
+      wan_setCode('ERR');
+      wan_showError('地址必须以 http:// 或 https:// 开头', '当前填写的是：' + url);
+      return;
+    }
+
+    var opts = { method: method, headers: { 'Accept': 'application/json' } };
+
+    if (needBody && bodyText) {
+      try {
+        JSON.parse(bodyText);
+      } catch (err) {
+        wan_setCode('ERR');
+        wan_showError('请求体不是合法 JSON：' + err.message,
+          '请检查引号、逗号与括号是否配对，或点「格式化」按钮排版后再改。');
+        return;
+      }
+      opts.headers['Content-Type'] = 'application/json; charset=UTF-8';
+      opts.body = bodyText;
+    }
+
+    wan_hideError();
+    wan_setBusy(true);
+    wan_paintMethod(method);
+    wan_$('wan_time').textContent = '—';
+    wan_$('wan_size').textContent = '—';
+    wan_$('wan_st_type').textContent = '—';
+
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = null;
+    if (ctrl) {
+      opts.signal = ctrl.signal;
+      timer = setTimeout(function () { ctrl.abort(); }, 12000);
+    }
+
+    var t0 = wan_now();
+
+    try {
+      var res = await fetch(url, opts);
+      var text = await res.text();
+      var ms = Math.round(wan_now() - t0);
+      var size = wan_bytes(text);
+
+      wan_setCode(res.status);
+      wan_$('wan_time').textContent = ms + ' ms';
+      wan_$('wan_size').textContent = wan_fmtBytes(size);
+      wan_$('wan_st_type').textContent = res.headers.get('content-type') || '未知';
+
+      var headers = [];
+      res.headers.forEach(function (value, key) { headers.push([key, value]); });
+
+      var parsed = null;
+      var pretty = text;
+      try {
+        parsed = JSON.parse(text);
+        pretty = JSON.stringify(parsed, null, 2);
+      } catch (err) {
+        parsed = null;
+      }
+
+      wan_state.raw = text;
+      wan_$('wan_json_code').innerHTML = pretty ? wan_jsonHtml(pretty) : '<span class="wan_null">（响应体不是 JSON，已切到「原始文本」查看）</span>';
+      wan_$('wan_raw').textContent = text || '（空响应体）';
+      wan_$('wan_htbody').innerHTML = headers.length
+        ? headers.map(function (kv) {
+            return '<tr><th>' + wan_escape(kv[0]) + '</th><td>' + wan_escape(kv[1]) + '</td></tr>';
+          }).join('')
+        : '<tr><td colspan="2" style="color:#55688a">浏览器没有暴露任何响应头（CORS 只允许读取简单响应头）</td></tr>';
+
+      wan_$('wan_sent').textContent = (needBody && bodyText) ? wan_pretty(bodyText) : '（本次请求没有请求体）';
+
+      wan_log(method, url, res.status, ms);
+
+      if (!res.ok) {
+        wan_showError(
+          'HTTP ' + res.status + ' ' + (res.statusText || ''),
+          res.status === 404
+            ? '接口存在，但这个资源没有找到。jsonplaceholder 的文章 ID 只到 100，试试 /posts/1。'
+            : '服务器返回了 ' + res.status + '，响应体仍可能包含错误详情，看「响应数据」标签。'
+        );
+      }
+    } catch (err) {
+      var ms2 = Math.round(wan_now() - t0);
+      var name = err && err.name ? err.name : 'Error';
+      var msg = err && err.message ? err.message : String(err);
+      var hint;
+
+      if (name === 'AbortError') {
+        hint = '超过 12 秒没有响应，已主动中断。检查网络，或换一个更快的接口。';
+      } else if (/Failed to fetch|NetworkError|Load failed/i.test(name + ' ' + msg)) {
+        hint = '浏览器没能完成这次请求：域名解析失败、网络断开，或对方没有开放 CORS。' +
+          '（用 file:// 打开本页时，「网络错误」用例会走到这里）';
+      } else {
+        hint = '这属于请求在发出前后的异常，检查地址拼写与浏览器控制台的详细输出。';
+      }
+
+      wan_setCode('ERR');
+      wan_$('wan_time').textContent = ms2 + ' ms';
+      wan_$('wan_size').textContent = '—';
+      wan_$('wan_json_code').innerHTML = '<span class="wan_null">（没有响应数据）</span>';
+      wan_$('wan_raw').textContent = '（没有响应数据）';
+      wan_showError(name + '：' + msg, hint);
+      wan_log(method, url, 'ERR', ms2);
+    } finally {
+      if (timer) { clearTimeout(timer); }
+      wan_setBusy(false);
+    }
+  }
+
+  function wan_pretty(text) {
+    try {
+      return JSON.stringify(JSON.parse(text), null, 2);
+    } catch (err) {
+      return text;
+    }
+  }
+
+  /* ---------- 事件绑定 ---------- */
+
+  wan_$('wan_send').addEventListener('click', wan_send);
+
+  wan_$('wan_tabs').addEventListener('click', function (e) {
+    var tab = e.target.closest ? e.target.closest('.wan_tab') : null;
+    if (!tab) { return; }
+    wan_switchPane(tab.getAttribute('data-pane'));
+  });
+
+  wan_$('wan_method').addEventListener('change', function () {
+    wan_bodyEnabled(this.value);
+    wan_paintMethod(this.value);
+  });
+
+  wan_$('wan_url').addEventListener('input', function () {
+    wan_$('wan_requrl').textContent = this.value.trim() || '（未填写地址）';
+  });
+
+  wan_$('wan_format').addEventListener('click', function () {
+    var box = wan_$('wan_body');
+    try {
+      box.value = JSON.stringify(JSON.parse(box.value), null, 2);
+      box.style.borderColor = '#22314b';
+    } catch (err) {
+      box.style.borderColor = '#f87171';
+      wan_showError('格式化失败：请求体不是合法 JSON', err.message);
+    }
+  });
+
+  wan_$('wan_clearbody').addEventListener('click', function () {
+    wan_$('wan_body').value = '';
+    wan_$('wan_body').focus();
+  });
+
+  wan_$('wan_copy').addEventListener('click', async function () {
+    var text = wan_state.raw || '';
+    if (!text) { return; }
+    var btn = this;
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = '已复制 ✓';
+    } catch (err) {
+      btn.textContent = '复制失败';
+    }
+    setTimeout(function () { btn.textContent = '复制响应'; }, 1400);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      wan_send();
+    }
+  });
+
+  /* ---------- 初始化 ---------- */
+
+  wan_buildPresets();
+  wan_$('wan_body').value = wan_bodyTpl.post;
+  wan_bodyEnabled('POST');
+  wan_paintMethod('POST');
+  wan_renderHistory();
+  wan_switchPane('body');
+
+  /* 页面载入后自动演示一次 POST，方便直接看到返回结果 */
+  setTimeout(wan_send, 420);
+})();
+</script>
+</body>
+</html>
