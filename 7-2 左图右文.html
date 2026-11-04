@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        img{
+            display: block;
+            width: 100%;
+        }
+        .box{
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 10px;
+        }
+        /* 左图右文：每个条目图片在左、文字在右 */
+        .zitem{
+            display: flex;          /* 横向排布 */
+            align-items: center;    /* 垂直居中 */
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;    /* 条目之间的间距 */
+        }
+        .zitem img{
+            width: 200px;           /* 图片固定宽度 */
+            height: 150px;
+            object-fit: cover;      /* 图片按比例裁剪填充 */
+        }
+        .yitem{
+            margin-left: 15px;      /* 文字与图片的间距 */
+        }
+        .yitem h3{
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+        .yitem .author,
+        .yitem .time{
+            color: #999;
+        }
+        .yitem .author{
+            margin-right: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div class="zitem">
+            <img src="image/3.jpg">
+            <div class="yitem">
+                <h3>标题1</h3>
+                <span class="author">万逸泽</span>
+                <span class="time">2026-9-21</span>
+            </div>
+        </div>
+        <div class="zitem">
+            <img src="image/4.jpg">
+            <div class="yitem">
+                <h3>标题2</h3>
+                <span class="author">万逸泽</span>
+                <span class="time">2026-9-21</span>
+            </div>
+        </div>
+        <div class="zitem">
+            <img src="image/5.jpg">
+            <div class="yitem">
+                <h3>标题3</h3>
+                <span class="author">万逸泽</span>
+                <span class="time">2026-9-21</span>
+            </div>
+        </div>
+    </div>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>13-1 Font Awesome 字体图标</title>
+  <!-- 字体图标方式：引入 CSS，图标本质是字体，用 <i class="fa..."> 显示 -->
+  <link rel="stylesheet" href="cdn/fontawesome/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Microsoft YaHei", sans-serif;
+      background: #f5f7fa;
+      color: #333;
+      padding: 40px 20px;
+    }
+    h1 { text-align: center; margin-bottom: 8px; }
+    .sub { text-align: center; color: #888; margin-bottom: 40px; }
+    section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px;
+      margin: 0 auto 28px;
+      max-width: 900px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    h2 {
+      font-size: 18px;
+      margin-bottom: 20px;
+      padding-left: 10px;
+      border-left: 4px solid #5282f0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 16px;
+      text-align: center;
+    }
+    .item {
+      padding: 18px 8px;
+      border-radius: 10px;
+      background: #f8f9fb;
+      transition: all .2s;
+      cursor: default;
+    }
+    .item:hover {
+      background: #eef3ff;
+      transform: translateY(-3px);
+      color: #5282f0;
+    }
+    .item i { font-size: 28px; display: block; margin-bottom: 8px; }
+    .item span { font-size: 12px; color: #999; }
+
+    /* 尺寸示例 */
+    .sizes i { margin-right: 24px; vertical-align: middle; }
+    .fa-2xl { color: #e74c3c; }
+    .fa-xl  { color: #e67e22; }
+    .fa-lg  { color: #f1c40f; }
+    .fa-2x  { color: #2ecc71; }
+
+    /* 动画示例 */
+    .spin-demo i { margin-right: 30px; font-size: 30px; color: #5282f0; }
+
+    /* 彩色品牌图标 */
+    .brands i { font-size: 32px; margin: 0 14px; }
+    .c-github { color: #24292e; }
+    .c-weixin { color: #07c160; }
+    .c-qq     { color: #12b7f5; }
+    .c-alipay { color: #1677ff; }
+    .c-douyin { color: #000; }
+    .c-chrome { color: #ea4335; }
+    .c-html5  { color: #e34c26; }
+    .c-css3   { color: #1572b6; }
+    .c-linux  { color: #fcc624; }
+  </style>
+</head>
+<body>
+
+  <h1><i class="fa-solid fa-font-awesome"></i> Font Awesome 字体图标</h1>
+  <p class="sub">使用方式：引入 CSS + 字体文件（cdn/fontawesome/webfonts/），图标本质是「字体」，通过 class 控制</p>
+
+  <section>
+    <h2>实心图标（fa-solid）</h2>
+    <div class="grid">
+      <div class="item"><i class="fa-solid fa-house"></i><span>house</span></div>
+      <div class="item"><i class="fa-solid fa-user"></i><span>user</span></div>
+      <div class="item"><i class="fa-solid fa-heart"></i><span>heart</span></div>
+      <div class="item"><i class="fa-solid fa-star"></i><span>star</span></div>
+      <div class="item"><i class="fa-solid fa-gear"></i><span>gear</span></div>
+      <div class="item"><i class="fa-solid fa-magnifying-glass"></i><span>search</span></div>
+      <div class="item"><i class="fa-solid fa-cart-shopping"></i><span>cart</span></div>
+      <div class="item"><i class="fa-solid fa-camera"></i><span>camera</span></div>
+      <div class="item"><i class="fa-solid fa-music"></i><span>music</span></div>
+      <div class="item"><i class="fa-solid fa-cloud"></i><span>cloud</span></div>
+      <div class="item"><i class="fa-solid fa-bell"></i><span>bell</span></div>
+      <div class="item"><i class="fa-solid fa-flag"></i><span>flag</span></div>
+      <div class="item"><i class="fa-solid fa-book"></i><span>book</span></div>
+      <div class="item"><i class="fa-solid fa-plane"></i><span>plane</span></div>
+      <div class="item"><i class="fa-solid fa-mug-hot"></i><span>coffee</span></div>
+      <div class="item"><i class="fa-solid fa-basketball"></i><span>ball</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>常规图标（fa-regular，线条风格）</h2>
+    <div class="grid">
+      <div class="item"><i class="fa-regular fa-heart"></i><span>heart</span></div>
+      <div class="item"><i class="fa-regular fa-star"></i><span>star</span></div>
+      <div class="item"><i class="fa-regular fa-face-smile"></i><span>smile</span></div>
+      <div class="item"><i class="fa-regular fa-thumbs-up"></i><span>thumbs-up</span></div>
+      <div class="item"><i class="fa-regular fa-envelope"></i><span>envelope</span></div>
+      <div class="item"><i class="fa-regular fa-clock"></i><span>clock</span></div>
+      <div class="item"><i class="fa-regular fa-calendar"></i><span>calendar</span></div>
+      <div class="item"><i class="fa-regular fa-file"></i><span>file</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>不同尺寸（字体图标的特点：像文字一样用 font-size 缩放）</h2>
+    <p class="sizes">
+      <i class="fa-solid fa-coffee fa-2xl"></i>
+      <i class="fa-solid fa-coffee fa-xl"></i>
+      <i class="fa-solid fa-coffee fa-lg"></i>
+      <i class="fa-solid fa-coffee"></i>
+      <i class="fa-solid fa-coffee fa-sm"></i>
+      <i class="fa-solid fa-coffee fa-2x"></i>
+      <i class="fa-solid fa-coffee fa-3x"></i>
+      <i class="fa-solid fa-coffee fa-4x"></i>
+    </p>
+  </section>
+
+  <section>
+    <h2>动画效果（字体图标可直接使用内置动画 class）</h2>
+    <p class="spin-demo">
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      <i class="fa-solid fa-circle-notch fa-spin"></i>
+      <i class="fa-solid fa-gear fa-spin"></i>
+      <i class="fa-solid fa-rotate fa-spin"></i>
+      <i class="fa-solid fa-heart fa-beat"></i>
+      <i class="fa-solid fa-triangle-exclamation fa-fade"></i>
+      <i class="fa-solid fa-arrow-left-right fa-flip"></i>
+      <i class="fa-solid fa-basketball fa-bounce"></i>
+    </p>
+  </section>
+
+  <section>
+    <h2>品牌图标（fa-brands）</h2>
+    <p class="brands">
+      <i class="fa-brands fa-github c-github"></i>
+      <i class="fa-brands fa-weixin c-weixin"></i>
+      <i class="fa-brands fa-qq c-qq"></i>
+      <i class="fa-brands fa-alipay c-alipay"></i>
+      <i class="fa-brands fa-tiktok c-douyin"></i>
+      <i class="fa-brands fa-chrome c-chrome"></i>
+      <i class="fa-brands fa-html5 c-html5"></i>
+      <i class="fa-brands fa-css3-alt c-css3"></i>
+      <i class="fa-brands fa-linux c-linux"></i>
+    </p>
+  </section>
+
+</body>
+</html>

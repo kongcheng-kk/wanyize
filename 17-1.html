@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  文件：17-1.html
+  作者：万逸泽（学号 24001010412）
+  建立时间：2026-11-02 13:38
+  使用的大模型：deepseek-v4.1-flash
+  提示词：
+    完成17.1html 展示json。完成17-2.html 获取一个接口的数据并展示。
+    接口可以跨域访问。
+  说明：JSON 数据格式教学页 —— 语法规则、JSON.parse / JSON.stringify、遍历渲染
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>17-1 JSON 数据格式 · 展示与解析</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f4f5f7;
+      color: #24292f;
+      line-height: 1.7;
+      padding: 36px 18px 64px;
+    }
+
+    .wan_wrap { max-width: 880px; margin: 0 auto; }
+
+    /* ---------- 头部 ---------- */
+    .wan_hero {
+      background: linear-gradient(135deg, #059669, #0d9488 55%, #0891b2);
+      color: #fff;
+      border-radius: 18px;
+      padding: 30px 32px 28px;
+      box-shadow: 0 12px 28px -10px rgba(5, 150, 105, .5);
+      position: relative;
+      overflow: hidden;
+    }
+    .wan_hero::after {
+      content: "{ }";
+      position: absolute;
+      right: 24px; top: 6px;
+      font: 700 96px/1 Consolas, monospace;
+      color: rgba(255, 255, 255, .13);
+      pointer-events: none;
+    }
+    .wan_hero h1 { font-size: 26px; letter-spacing: .5px; }
+    .wan_hero p { font-size: 14px; opacity: .9; margin-top: 6px; }
+    .wan_home {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .18);
+      border: 1px solid rgba(255, 255, 255, .38);
+      color: #fff;
+      font-size: 13px;
+      text-decoration: none;
+      transition: background .2s;
+    }
+    .wan_home:hover { background: rgba(255, 255, 255, .32); }
+
+    /* ---------- 特性标签 ---------- */
+    .wan_pills { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+    .wan_pill {
+      flex: 1;
+      min-width: 180px;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+    }
+    .wan_pill b { display: block; font-size: 14px; margin-bottom: 2px; }
+
+    /* ---------- 卡片 ---------- */
+    .wan_card {
+      background: #fff;
+      border: 1px solid #eef0f3;
+      border-radius: 14px;
+      padding: 24px 26px 26px;
+      margin-top: 18px;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 10px 30px -22px rgba(16, 24, 40, .5);
+    }
+    .wan_card h2 {
+      font-size: 18px;
+      padding-left: 12px;
+      border-left: 4px solid #059669;
+      line-height: 1.4;
+    }
+    .wan_card h3 {
+      font-size: 15px;
+      color: #065f46;
+      margin: 24px 0 10px;
+    }
+    .wan_card h3 .wan_tag {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 1px 8px;
+      border-radius: 999px;
+      background: #ecfdf5;
+      color: #047857;
+      font-size: 11.5px;
+      font-weight: 400;
+      vertical-align: 2px;
+    }
+    .wan_desc { font-size: 13.5px; color: #667085; margin-top: 6px; }
+
+    /* ---------- 语法规则列表 ---------- */
+    .wan_rules { list-style: none; margin-top: 12px; }
+    .wan_rules li {
+      display: flex;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 13.5px;
+      border-bottom: 1px dashed #eef0f3;
+    }
+    .wan_rules li:last-child { border-bottom: 0; }
+    .wan_rules .wan_no {
+      flex: none;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #d1fae5;
+      color: #047857;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 3px;
+    }
+
+    /* ---------- 代码块 ---------- */
+    .wan_code {
+      background: #101828;
+      color: #e4e7ec;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.85;
+      padding: 14px 16px;
+      border-radius: 10px;
+      overflow-x: auto;
+      margin: 12px 0;
+      white-space: pre;
+    }
+    .wan_jk { color: #7dd3fc; }   /* 键名 */
+    .wan_js { color: #c3e88d; }   /* 字符串 */
+    .wan_jn { color: #f78c6c; }   /* 数字 */
+    .wan_jb { color: #c792ea; }   /* true / false / null */
+
+    /* ---------- 控件 ---------- */
+    .wan_row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin: 14px 0 12px;
+    }
+    .wan_btn {
+      padding: 8px 18px;
+      border: 0;
+      border-radius: 8px;
+      background: #059669;
+      color: #fff;
+      font-size: 13.5px;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 6px 14px -8px rgba(5, 150, 105, .9);
+      transition: background .18s;
+    }
+    .wan_btn:hover { background: #047857; }
+    .wan_btn:active { transform: translateY(1px); }
+    .wan_btn_ghost {
+      background: #ecfdf5;
+      color: #047857;
+      box-shadow: none;
+      border: 1px solid #a7f3d0;
+    }
+    .wan_btn_ghost:hover { background: #d1fae5; }
+
+    /* ---------- 表格 ---------- */
+    .wan_table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      margin: 12px 0;
+    }
+    .wan_table th, .wan_table td {
+      border: 1px solid #e6e8ec;
+      padding: 9px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .wan_table thead th { background: #f7f8fa; font-weight: 600; }
+    .wan_table tbody tr:nth-child(even) { background: #fcfcfd; }
+    .wan_table code {
+      font-family: Consolas, monospace;
+      background: #ecfdf5;
+      color: #047857;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 12.5px;
+    }
+    .wan_table_wrap { overflow-x: auto; }
+
+    /* ---------- 控制台输出 ---------- */
+    .wan_out {
+      background: #0b1220;
+      color: #a6f4c5;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.9;
+      border-radius: 10px;
+      padding: 12px 14px;
+      min-height: 44px;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+    .wan_line { white-space: pre-wrap; word-break: break-word; }
+    .wan_line::before { content: "› "; color: #475569; }
+    .wan_line.wan_ok { color: #7ee787; }
+    .wan_line.wan_ok::before { content: "✓ "; color: #34d399; }
+    .wan_line.wan_err { color: #fca5a5; }
+    .wan_line.wan_err::before { content: "✕ "; color: #f87171; }
+    .wan_line.wan_mute { color: #7d8ba1; }
+    .wan_line.wan_mute::before { color: #334155; }
+
+    /* ---------- 商品卡片（遍历渲染） ---------- */
+    .wan_goods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 14px 0; }
+    .wan_good {
+      border: 1px solid #eef0f3;
+      border-radius: 12px;
+      padding: 14px 14px 12px;
+      background: #fcfcfd;
+    }
+    .wan_good b { font-size: 14px; display: block; }
+    .wan_good .wan_price {
+      color: #059669;
+      font-size: 17px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+    .wan_good .wan_stock { font-size: 12.5px; color: #667085; margin-top: 2px; }
+    .wan_good .wan_stock.wan_low { color: #dc2626; }
+    .wan_good .wan_badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 1px 8px;
+      border-radius: 999px;
+      font-size: 11.5px;
+    }
+    .wan_badge_sale { background: #d1fae5; color: #047857; }
+    .wan_badge_off { background: #f3f4f6; color: #6b7280; }
+
+    .wan_note {
+      font-size: 12.5px;
+      color: #8a94a6;
+      margin-top: 10px;
+      padding-left: 12px;
+      border-left: 3px solid #e5e7eb;
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 22px 12px 48px; }
+      .wan_hero { padding: 22px 20px; }
+      .wan_hero h1 { font-size: 21px; }
+      .wan_hero::after { font-size: 64px; right: 12px; }
+      .wan_card { padding: 20px 16px 22px; }
+      .wan_goods { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .wan_pill { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+<div class="wan_wrap">
+
+  <!-- ================= 头部 ================= -->
+  <header class="wan_hero">
+    <h1>JSON 数据格式</h1>
+    <p>JavaScript Object Notation · 轻量级的数据交换格式</p>
+    <a class="wan_home" href="index.html">← 返回首页</a>
+  </header>
+
+  <!-- ================= 一、什么是 JSON ================= -->
+  <section class="wan_card">
+    <h2>一、什么是 JSON</h2>
+    <p class="wan_desc">JSON（JavaScript 对象表示法）是一种<b>纯文本</b>格式的数据交换语言。它诞生于 JavaScript 的对象写法，但如今已经是独立于语言的通用标准：服务器返回数据、配置文件、接口传输，几乎都用它。</p>
+    <div class="wan_pills">
+      <div class="wan_pill"><b>轻量</b>纯文本、结构紧凑，比 XML 更小更快</div>
+      <div class="wan_pill"><b>易读</b>键值对结构，人和机器都容易理解</div>
+      <div class="wan_pill"><b>通用</b>所有主流语言都有解析与生成库</div>
+    </div>
+  </section>
+
+  <!-- ================= 二、语法规则 ================= -->
+  <section class="wan_card">
+    <h2>二、JSON 语法规则</h2>
+    <ul class="wan_rules">
+      <li><span class="wan_no">1</span><span>数据写在<b>名称 / 值对</b>中：名称就是带双引号的字符串，中间用冒号，如 <code>"wan_name": "万逸泽"</code></span></li>
+      <li><span class="wan_no">2</span><span>多个数据之间用<b>逗号</b>分隔，最后一项后面不能再加逗号</span></li>
+      <li><span class="wan_no">3</span><span><b>花括号 {}</b> 保存对象，<b>方括号 []</b> 保存数组，两者可以任意嵌套</span></li>
+      <li><span class="wan_no">4</span><span>JSON 里<b>不允许</b>出现注释、函数、<code>undefined</code>，字符串只能用双引号</span></li>
+    </ul>
+
+    <h3>JSON 值的六种类型</h3>
+    <div class="wan_table_wrap">
+      <table class="wan_table">
+        <thead>
+          <tr><th style="width: 18%">类型</th><th style="width: 34%">写法示例</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>字符串</b></td><td><code>"hello"</code></td><td>必须用双引号包裹，不能用单引号</td></tr>
+          <tr><td><b>数字</b></td><td><code>329.5</code></td><td>整数或小数，不能加引号</td></tr>
+          <tr><td><b>布尔值</b></td><td><code>true</code> / <code>false</code></td><td>全小写，不是 True</td></tr>
+          <tr><td><b>空值</b></td><td><code>null</code></td><td>表示「没有值」</td></tr>
+          <tr><td><b>对象</b></td><td><code>{"wan_id": 1}</code></td><td>花括号包裹的键值对集合</td></tr>
+          <tr><td><b>数组</b></td><td><code>[1, 2, 3]</code></td><td>方括号包裹的有序列表</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 三、JSON 与 JS 对象的区别 ================= -->
+  <section class="wan_card">
+    <h2>三、JSON 与 JavaScript 对象的区别</h2>
+    <p class="wan_desc">JSON 本质是一段<b>字符串</b>；JS 对象是内存里真实存在的<b>对象</b>。两者长得像，规则却不同：</p>
+    <div class="wan_table_wrap">
+      <table class="wan_table">
+        <thead>
+          <tr><th style="width: 22%">对比项</th><th style="width: 39%">JSON</th><th>JavaScript 对象</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>本质</b></td><td>字符串（文本格式）</td><td>内存中的对象</td></tr>
+          <tr><td><b>键名</b></td><td>必须加双引号</td><td>可以不加引号</td></tr>
+          <tr><td><b>值的类型</b></td><td>只有右边六种</td><td>任意类型，包括函数、undefined</td></tr>
+          <tr><td><b>注释</b></td><td>不允许</td><td>允许 <code>//</code> 与 <code>/* */</code></td></tr>
+          <tr><td><b>末尾逗号</b></td><td>不允许</td><td>允许</td></tr>
+          <tr><td><b>单双引号</b></td><td>字符串只能双引号</td><td>单双引号都可以</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 四、一段完整的 JSON ================= -->
+  <section class="wan_card">
+    <h2>四、一段完整的 JSON 示例</h2>
+    <p class="wan_desc">一个「云小店」的数据：三种值类型、数组嵌套对象，全都用上了（下方已按语法高亮着色）。</p>
+    <pre class="wan_code"><code class="wan_json" id="wan_src_shop">{
+  "wan_shopName": "万逸泽的云小店",
+  "wan_open": true,
+  "wan_fans": 1024,
+  "wan_motto": null,
+  "wan_goods": [
+    { "wan_id": 1, "wan_name": "机械键盘", "wan_price": 329.5, "wan_stock": 46, "wan_onSale": true },
+    { "wan_id": 2, "wan_name": "无线鼠标", "wan_price": 129.0, "wan_stock": 12, "wan_onSale": true },
+    { "wan_id": 3, "wan_name": "USB-C 拓展坞", "wan_price": 199.0, "wan_stock": 8, "wan_onSale": false }
+  ]
+}</code></pre>
+  </section>
+
+  <!-- ================= 五、JSON.parse ================= -->
+  <section class="wan_card">
+    <h2>五、JSON.parse —— 把 JSON 字符串变成 JS 对象</h2>
+    <p class="wan_desc">接口返回的数据一开始都是字符串，必须先 <code>JSON.parse()</code> 才能当对象用。</p>
+
+    <h3>示例：解析一段用户信息 <span class="wan_tag">字符串 → 对象</span></h3>
+    <pre class="wan_code"><code class="wan_json" id="wan_src_parse">{"wan_name":"万逸泽","wan_stuId":24001010412,"wan_city":"武汉","wan_skills":["HTML","CSS","JavaScript"],"wan_isVip":true,"wan_motto":null}</code></pre>
+
+    <pre class="wan_code"><code><span style="color:#c792ea">var</span> wan_user = JSON.<span style="color:#82aaff">parse</span>(wan_jsonText);   <span style="color:#6b7a90">// 字符串 → 对象</span></code></pre>
+
+    <div class="wan_row">
+      <button class="wan_btn" id="wan_btn_parse" type="button">▶ 解析并渲染</button>
+    </div>
+
+    <div class="wan_table_wrap" id="wan_parse_wrap" hidden>
+      <table class="wan_table" id="wan_parse_table">
+        <thead><tr><th style="width: 30%">字段</th><th>解析出的值</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="wan_out" id="wan_out_parse"></div>
+    <p class="wan_note">如果字符串不符合 JSON 语法，<code>JSON.parse</code> 会直接抛出异常，实际开发中要配合 <code>try…catch</code> 使用。</p>
+  </section>
+
+  <!-- ================= 六、JSON.stringify ================= -->
+  <section class="wan_card">
+    <h2>六、JSON.stringify —— 把 JS 对象变成 JSON 字符串</h2>
+    <p class="wan_desc">提交数据给服务器前，要把对象序列化成 JSON 字符串。第二个参数传 <code>null</code>，第三个参数控制缩进空格数。</p>
+
+    <pre class="wan_code"><code><span style="color:#c792ea">var</span> wan_jsonStr = JSON.<span style="color:#82aaff">stringify</span>(wan_stu, <span style="color:#c792ea">null</span>, <span style="color:#f78c6c">2</span>);   <span style="color:#6b7a90">// 对象 → 字符串（缩进 2 格）</span></code></pre>
+
+    <div class="wan_row">
+      <button class="wan_btn wan_btn_ghost" id="wan_btn_fmt" type="button">格式化（缩进 2）</button>
+      <button class="wan_btn wan_btn_ghost" id="wan_btn_zip" type="button">压缩（一行）</button>
+    </div>
+    <pre class="wan_code"><code class="wan_json" id="wan_out_str"></code></pre>
+    <p class="wan_note">观察输出：键名自动加上了双引号，单引号字符串变成了双引号——这正是 JSON 的语法要求。</p>
+  </section>
+
+  <!-- ================= 七、遍历 JSON 渲染页面 ================= -->
+  <section class="wan_card">
+    <h2>七、遍历 JSON 渲染页面</h2>
+    <p class="wan_desc">下面这些商品卡片，就是用 <code>JSON.parse</code> 解析第四节那段 JSON，再用 <code>for</code> 循环遍历 <code>wan_goods</code> 数组动态生成的。</p>
+
+    <div class="wan_goods" id="wan_goods_box"></div>
+    <div class="wan_out" id="wan_out_goods"></div>
+  </section>
+
+  <!-- ================= 小结 ================= -->
+  <section class="wan_card">
+    <h2>小结</h2>
+    <div class="wan_table_wrap">
+      <table class="wan_table">
+        <thead>
+          <tr><th style="width: 40%">方法</th><th style="width: 30%">作用</th><th>方向</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>JSON.parse(text)</code></td><td>JSON 字符串 → JS 对象</td><td>解析（收数据）</td></tr>
+          <tr><td><code>JSON.stringify(obj, null, n)</code></td><td>JS 对象 → JSON 字符串</td><td>序列化（发数据）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="wan_note">下一页（17-2）将用 <code>fetch</code> 真实请求一个跨域接口，拿到 JSON 后再解析、渲染，与本页衔接。</p>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  function wan_get(id) {
+    return document.getElementById(id);
+  }
+
+  function wan_print(node, text, cls) {
+    var wan_row = document.createElement('div');
+    wan_row.className = 'wan_line' + (cls ? ' ' + cls : '');
+    wan_row.textContent = text;
+    node.appendChild(wan_row);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  /* ---------------- JSON 语法高亮 ---------------- */
+  function wan_colorJson(wan_text) {
+    return String(wan_text)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/("(?:\\.|[^"\\])*")(\s*:)|("(?:\\.|[^"\\])*")|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)|\b(true|false|null)\b/g,
+        function (wan_all, wan_key, wan_colon, wan_str, wan_num, wan_kw) {
+          if (wan_key) {
+            return '<span class="wan_jk">' + wan_key + '</span>' + wan_colon;
+          }
+          if (wan_str) {
+            return '<span class="wan_js">' + wan_str + '</span>';
+          }
+          if (wan_num) {
+            return '<span class="wan_jn">' + wan_num + '</span>';
+          }
+          if (wan_kw) {
+            return '<span class="wan_jb">' + wan_kw + '</span>';
+          }
+          return wan_all;
+        });
+  }
+
+  /* 页面里所有 .wan_json 代码块统一着色 */
+  function wan_colorAll() {
+    var wan_blocks = document.querySelectorAll('.wan_json');
+    for (var wan_i = 0; wan_i < wan_blocks.length; wan_i++) {
+      wan_blocks[wan_i].innerHTML = wan_colorJson(wan_blocks[wan_i].textContent);
+    }
+  }
+
+  /* ---------------- 五、JSON.parse 演示 ---------------- */
+  function wan_runParse() {
+    var wan_out = wan_get('wan_out_parse');
+    var wan_tbody = wan_get('wan_parse_table').querySelector('tbody');
+    var wan_src = wan_get('wan_src_parse').textContent;
+    wan_out.innerHTML = '';
+    wan_tbody.innerHTML = '';
+
+    wan_print(wan_out, '原始数据 typeof = ' + typeof wan_src, 'wan_mute');
+
+    var wan_user;
+    try {
+      wan_user = JSON.parse(wan_src);
+    } catch (wan_err) {
+      wan_print(wan_out, '解析失败：' + wan_err.message, 'wan_err');
+      return;
+    }
+
+    wan_print(wan_out, 'JSON.parse 完成，typeof = ' + typeof wan_user, 'wan_ok');
+    wan_print(wan_out, '共有 ' + Object.keys(wan_user).length + ' 个字段，可以像普通对象一样取值');
+
+    var wan_rows = [
+      ['wan_name（姓名）', wan_user.wan_name],
+      ['wan_stuId（学号）', wan_user.wan_stuId],
+      ['wan_city（城市）', wan_user.wan_city],
+      ['wan_skills（技能数组）', wan_user.wan_skills.join('、')],
+      ['wan_isVip（是否会员）', wan_user.wan_isVip ? '是' : '否'],
+      ['wan_motto（签名）', wan_user.wan_motto === null ? 'null（空值）' : wan_user.wan_motto]
+    ];
+
+    for (var wan_i = 0; wan_i < wan_rows.length; wan_i++) {
+      var wan_tr = document.createElement('tr');
+      var wan_td1 = document.createElement('td');
+      var wan_td2 = document.createElement('td');
+      wan_td1.textContent = wan_rows[wan_i][0];
+      wan_td2.textContent = String(wan_rows[wan_i][1]);
+      wan_tr.appendChild(wan_td1);
+      wan_tr.appendChild(wan_td2);
+      wan_tbody.appendChild(wan_tr);
+    }
+
+    wan_get('wan_parse_wrap').hidden = false;
+  }
+
+  /* ---------------- 六、JSON.stringify 演示 ---------------- */
+  var wan_stu = {
+    wan_title: '第 17 次实验 · JSON 与接口',
+    wan_author: '万逸泽',
+    wan_stuId: 24001010412,
+    wan_score: 96.5,
+    wan_finished: true,
+    wan_tags: ['JSON', 'fetch', 'API'],
+    wan_remark: null
+  };
+
+  function wan_runStringify(wan_indent) {
+    var wan_str = JSON.stringify(wan_stu, null, wan_indent);
+    wan_get('wan_out_str').innerHTML = wan_colorJson(wan_str);
+  }
+
+  /* ---------------- 七、遍历 JSON 渲染商品卡片 ---------------- */
+  function wan_renderGoods() {
+    var wan_shop = JSON.parse(wan_get('wan_src_shop').textContent);
+    var wan_box = wan_get('wan_goods_box');
+    var wan_out = wan_get('wan_out_goods');
+    wan_box.innerHTML = '';
+    wan_out.innerHTML = '';
+
+    wan_print(wan_out, '解析完成：店铺「' + wan_shop.wan_shopName + '」，共有 ' + wan_shop.wan_goods.length + ' 件商品', 'wan_mute');
+
+    for (var wan_i = 0; wan_i < wan_shop.wan_goods.length; wan_i++) {
+      var wan_g = wan_shop.wan_goods[wan_i];
+
+      var wan_card = document.createElement('div');
+      wan_card.className = 'wan_good';
+
+      var wan_name = document.createElement('b');
+      wan_name.textContent = wan_g.wan_name;
+
+      var wan_price = document.createElement('div');
+      wan_price.className = 'wan_price';
+      wan_price.textContent = '¥' + wan_g.wan_price.toFixed(2);
+
+      var wan_stock = document.createElement('div');
+      wan_stock.className = 'wan_stock' + (wan_g.wan_stock < 10 ? ' wan_low' : '');
+      wan_stock.textContent = wan_g.wan_stock < 10 ? '仅剩 ' + wan_g.wan_stock + ' 件' : '库存 ' + wan_g.wan_stock + ' 件';
+
+      var wan_badge = document.createElement('span');
+      wan_badge.className = 'wan_badge ' + (wan_g.wan_onSale ? 'wan_badge_sale' : 'wan_badge_off');
+      wan_badge.textContent = wan_g.wan_onSale ? '在售' : '已下架';
+
+      wan_card.appendChild(wan_name);
+      wan_card.appendChild(wan_price);
+      wan_card.appendChild(wan_stock);
+      wan_card.appendChild(wan_badge);
+      wan_box.appendChild(wan_card);
+
+      wan_print(wan_out, '第 ' + (wan_i + 1) + ' 件：' + wan_g.wan_name + '，¥' + wan_g.wan_price.toFixed(2));
+    }
+
+    wan_print(wan_out, '遍历结束，共生成 ' + wan_shop.wan_goods.length + ' 张卡片', 'wan_ok');
+  }
+
+  /* ---------------- 初始化 ---------------- */
+  function wan_init() {
+    wan_colorAll();
+
+    wan_get('wan_btn_parse').addEventListener('click', wan_runParse);
+    wan_get('wan_btn_fmt').addEventListener('click', function () { wan_runStringify(2); });
+    wan_get('wan_btn_zip').addEventListener('click', function () { wan_runStringify(0); });
+
+    wan_runStringify(2);
+    wan_renderGoods();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wan_init);
+  } else {
+    wan_init();
+  }
+})();
+</script>
+</body>
+</html>

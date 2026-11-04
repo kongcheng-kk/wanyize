@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  文件：17-3-detail.html
+  作者：万逸泽（学号 24001010412）
+  建立时间：2026-11-02 14:00
+  使用的大模型：deepseek-v4.1-flash
+  提示词：
+    完成17.3
+    （附图 json.txt 要求）
+    3、完成17-3.html 和17-3-detail.html,显示列表和列表详情，数据来源于接口，使用fetch
+       列表：https://dummyjson.com/products?limit=8，默认商品列表。
+       详情：https://dummyjson.com/products/1，根据 ID 获取单个商品。
+  说明：从 URL 查询字符串读取 id，fetch 单个商品接口，展示图片画廊、价格、规格与评价
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>17-3 商品详情 · fetch 详情页</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* 保证 hidden 属性始终生效，不被 .wan_error 等 display 规则覆盖 */
+    [hidden] { display: none !important; }
+
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f4f5fa;
+      color: #24292f;
+      line-height: 1.7;
+      padding: 30px 18px 60px;
+    }
+
+    .wan_wrap { max-width: 1040px; margin: 0 auto; }
+
+    /* ---------- 顶部条 ---------- */
+    .wan_bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      background: #fff;
+      border: 1px solid #e5e7f0;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px -10px rgba(30, 41, 99, .3);
+    }
+    .wan_badge {
+      padding: 2px 10px;
+      border-radius: 6px;
+      background: #eef2ff;
+      color: #4338ca;
+      border: 1px solid #dfe3fb;
+      font: 600 12px/1.7 Consolas, monospace;
+    }
+    .wan_crumb {
+      font-size: 12.5px;
+      color: #8b90a3;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .wan_crumb a { color: #4f46e5; text-decoration: none; }
+    .wan_crumb a:hover { text-decoration: underline; }
+    .wan_crumb b { color: #374151; font-weight: 600; }
+    .wan_bar_nav { margin-left: auto; display: flex; gap: 8px; }
+
+    .wan_btn {
+      font: inherit;
+      font-size: 13px;
+      padding: 7px 14px;
+      border-radius: 9px;
+      border: 1px solid #d8dbe8;
+      background: #fff;
+      color: #3b4256;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all .18s;
+      white-space: nowrap;
+    }
+    .wan_btn:hover:not(:disabled) { border-color: #a5b4fc; color: #4338ca; background: #f5f4ff; }
+    .wan_btn:disabled { opacity: .45; cursor: not-allowed; }
+    .wan_btn_primary {
+      background: linear-gradient(135deg, #4f46e5, #2563eb);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 4px 12px -4px rgba(79, 70, 229, .55);
+    }
+    .wan_btn_primary:hover:not(:disabled) { color: #fff; filter: brightness(1.07); }
+
+    /* ---------- 主卡片 ---------- */
+    .wan_detail {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 28px;
+      margin-top: 20px;
+      padding: 24px;
+      background: #fff;
+      border: 1px solid #e5e7f0;
+      border-radius: 16px;
+      box-shadow: 0 8px 28px -18px rgba(30, 41, 99, .45);
+    }
+
+    /* 画廊 */
+    .wan_gallery { display: flex; flex-direction: column; gap: 10px; }
+    .wan_mainimg {
+      aspect-ratio: 1 / 1;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f7f8fc, #eceffa);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border: 1px solid #edeff7;
+    }
+    .wan_mainimg img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 14px;
+      transition: transform .3s;
+    }
+    .wan_mainimg:hover img { transform: scale(1.05); }
+    .wan_thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .wan_thumb {
+      width: 64px;
+      height: 64px;
+      border-radius: 9px;
+      border: 2px solid #e5e7f0;
+      background: #fafbff;
+      cursor: pointer;
+      overflow: hidden;
+      padding: 0;
+      transition: border-color .18s, transform .18s;
+    }
+    .wan_thumb img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+    .wan_thumb:hover { transform: translateY(-2px); border-color: #c7cdf5; }
+    .wan_thumb.wan_thumb_on { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, .12); }
+
+    /* 右侧信息 */
+    .wan_info { display: flex; flex-direction: column; }
+    .wan_cat {
+      align-self: flex-start;
+      font-size: 11.5px;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4338ca;
+      border: 1px solid #dfe3fb;
+      text-transform: capitalize;
+    }
+    .wan_title {
+      font-size: 24px;
+      line-height: 1.35;
+      margin: 10px 0 6px;
+      color: #111827;
+    }
+    .wan_brand { font-size: 13px; color: #8b90a3; }
+    .wan_brand b { color: #4b5563; font-weight: 600; text-transform: capitalize; }
+
+    .wan_score {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+    .wan_stars { color: #f59e0b; letter-spacing: 1px; font-size: 14px; }
+    .wan_score b { color: #b45309; font-family: Consolas, monospace; }
+
+    .wan_priceline {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 14px 0 4px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #fff5f6, #fff9f3);
+      border: 1px solid #fbe2e5;
+    }
+    .wan_price { font: 700 30px/1.1 Consolas, monospace; color: #e11d48; }
+    .wan_old { font-size: 14px; color: #9aa0b0; text-decoration: line-through; }
+    .wan_off {
+      font-size: 12px;
+      font-weight: 600;
+      color: #b91c1c;
+      background: #fee2e2;
+      padding: 1px 8px;
+      border-radius: 6px;
+    }
+    .wan_save { margin-left: auto; font-size: 12px; color: #9a3412; }
+
+    .wan_stock {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 14px;
+    }
+    .wan_pill {
+      font-size: 12px;
+      padding: 3px 11px;
+      border-radius: 999px;
+      background: #f5f6fa;
+      color: #4b5563;
+      border: 1px solid #eaecf4;
+    }
+    .wan_pill_ok { background: #e8f7ee; color: #15803d; border-color: #d3efdf; }
+    .wan_pill_warn { background: #fef8e7; color: #b45309; border-color: #f8ecc9; }
+    .wan_pill_bad { background: #fdeaea; color: #b91c1c; border-color: #f6d5d5; }
+
+    .wan_desc {
+      font-size: 14px;
+      color: #4b5563;
+      padding: 12px 14px;
+      background: #fafbff;
+      border-left: 3px solid #c7cdf5;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 14px;
+    }
+
+    .wan_tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+    .wan_tag {
+      font-size: 12px;
+      padding: 2px 10px;
+      border-radius: 6px;
+      background: #f3f4fb;
+      border: 1px solid #e6e8f4;
+      color: #4338ca;
+    }
+
+    .wan_actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; }
+
+    /* ---------- 通用面板 ---------- */
+    .wan_panel {
+      margin-top: 20px;
+      background: #fff;
+      border: 1px solid #e5e7f0;
+      border-radius: 14px;
+      padding: 20px 22px;
+      box-shadow: 0 4px 16px -12px rgba(30, 41, 99, .3);
+    }
+    .wan_panel h2 {
+      font-size: 16px;
+      color: #312e81;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .wan_panel h2::before {
+      content: "";
+      width: 4px;
+      height: 16px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, #4f46e5, #2563eb);
+    }
+
+    /* 规格表 */
+    .wan_specs {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+    .wan_specs tr { border-bottom: 1px solid #f0f1f7; }
+    .wan_specs tr:last-child { border-bottom: none; }
+    .wan_specs th {
+      text-align: left;
+      font-weight: 500;
+      color: #8b90a3;
+      width: 130px;
+      padding: 9px 12px 9px 0;
+      vertical-align: top;
+      white-space: nowrap;
+    }
+    .wan_specs td { padding: 9px 0; color: #374151; }
+    .wan_specs td b { font-family: Consolas, monospace; font-weight: 600; color: #1f2937; }
+
+    /* 评价 */
+    .wan_review {
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #fbfbfe;
+      border: 1px solid #eef0f7;
+      margin-bottom: 10px;
+    }
+    .wan_review:last-child { margin-bottom: 0; }
+    .wan_review_head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      font-size: 12.5px;
+      color: #8b90a3;
+      margin-bottom: 4px;
+    }
+    .wan_review_head b { color: #374151; font-size: 13px; }
+    .wan_review_head .wan_stars { font-size: 12px; }
+    .wan_review_head time { margin-left: auto; }
+    .wan_review p { font-size: 13.5px; color: #4b5563; }
+
+    /* JSON */
+    .wan_json {
+      margin-top: 8px;
+      border: 1px solid #22283a;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #141a26;
+    }
+    .wan_json summary {
+      cursor: pointer;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: #a9b4cc;
+      background: #1b2230;
+      list-style: none;
+      user-select: none;
+    }
+    .wan_json summary::-webkit-details-marker { display: none; }
+    .wan_json summary::before { content: "▸ "; color: #60a5fa; }
+    .wan_json[open] summary::before { content: "▾ "; }
+    .wan_json pre {
+      margin: 0;
+      padding: 16px;
+      max-height: 340px;
+      overflow: auto;
+      font: 12px/1.6 Consolas, monospace;
+      color: #c3e0ff;
+      white-space: pre;
+    }
+
+    /* 状态 */
+    .wan_statebox {
+      margin-top: 20px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      background: #fff;
+      border: 1px solid #e5e7f0;
+      color: #6b7280;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+    }
+    .wan_statebox b { font-family: Consolas, monospace; color: #1f2937; }
+
+    .wan_error {
+      border-color: #f5c2c2;
+      background: #fdf3f3;
+      color: #a12121;
+      display: block;
+    }
+    .wan_error h3 { font-size: 15px; color: #b91c1c; margin-bottom: 8px; }
+    .wan_error p { margin-bottom: 10px; font-size: 13.5px; }
+    .wan_error code {
+      font-family: Consolas, monospace;
+      background: #fff;
+      border: 1px solid #f0d0d0;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    /* 骨架 */
+    .wan_skel { animation: wan_pulse 1.3s ease-in-out infinite; }
+    .wan_skel_box { background: #eef0f7; border-radius: 10px; }
+    @keyframes wan_pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .45; }
+    }
+
+    .wan_foot {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 12px;
+      color: #9aa0b0;
+    }
+    .wan_foot a { color: #4f46e5; text-decoration: none; }
+    .wan_foot a:hover { text-decoration: underline; }
+
+    @media (max-width: 860px) {
+      .wan_detail { grid-template-columns: 1fr; gap: 20px; padding: 18px; }
+      .wan_mainimg { max-width: 360px; margin: 0 auto; }
+      .wan_thumbs { justify-content: center; }
+      .wan_bar_nav { margin-left: 0; width: 100%; }
+    }
+    @media (max-width: 520px) {
+      body { padding: 16px 12px 44px; }
+      .wan_title { font-size: 19px; }
+      .wan_price { font-size: 24px; }
+      .wan_panel { padding: 16px; }
+      .wan_specs th { width: 96px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wan_wrap">
+
+  <!-- 顶部条 -->
+  <div class="wan_bar">
+    <span class="wan_badge">17-3-detail</span>
+    <nav class="wan_crumb">
+      <a href="17-3.html">商品列表</a>
+      <span>/</span>
+      <span id="wan_crumb_name">加载中…</span>
+    </nav>
+    <div class="wan_bar_nav">
+      <a class="wan_btn" href="17-3.html">← 返回列表</a>
+      <button class="wan_btn" id="wan_btn_prev" type="button">上一件</button>
+      <button class="wan_btn" id="wan_btn_next" type="button">下一件 →</button>
+    </div>
+  </div>
+
+  <!-- 主内容（加载时显示骨架） -->
+  <div id="wan_body">
+    <div class="wan_detail wan_skel">
+      <div class="wan_skel_box" style="aspect-ratio:1/1;"></div>
+      <div>
+        <div class="wan_skel_box" style="height:16px;width:80px;"></div>
+        <div class="wan_skel_box" style="height:26px;width:78%;margin-top:12px;"></div>
+        <div class="wan_skel_box" style="height:14px;width:40%;margin-top:10px;"></div>
+        <div class="wan_skel_box" style="height:56px;margin-top:18px;"></div>
+        <div class="wan_skel_box" style="height:14px;width:90%;margin-top:14px;"></div>
+        <div class="wan_skel_box" style="height:14px;width:70%;margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 错误面板 -->
+  <div class="wan_statebox wan_error" id="wan_error" hidden>
+    <div style="width:100%">
+      <h3>无法加载商品详情</h3>
+      <p id="wan_error_msg">—</p>
+      <p>请求地址：<code id="wan_req_url">—</code></p>
+      <a class="wan_btn wan_btn_primary" href="17-3.html" style="color:#fff;">返回商品列表</a>
+    </div>
+  </div>
+
+  <!-- 状态条 -->
+  <div class="wan_statebox" id="wan_status">
+    <span>请求地址：<b id="wan_st_url">—</b></span>
+    <span>HTTP：<b id="wan_st_code">—</b></span>
+    <span>耗时：<b id="wan_st_time">—</b></span>
+    <span>数据来源：<b>dummyjson.com</b></span>
+  </div>
+
+  <footer class="wan_foot">
+    高级网页设计 I · 第 17 章 JSON 与接口 ·
+    <a href="17-3.html">商品列表</a> ·
+    <a href="17-1.html">17-1 JSON</a> ·
+    <a href="index.html">作品集首页</a>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- 1. 从 URL 里取 id ---------- */
+  var wan_params = new URLSearchParams(location.search);
+  var wan_idRaw = wan_params.get('id');
+  var wan_id = parseInt(wan_idRaw, 10);
+
+  if (!wan_idRaw || isNaN(wan_id) || wan_id < 1) {
+    wan_id = 1;   // 没带参数（或参数非法）时默认看第 1 件，和题目要求一致
+  }
+
+  var WAN_API = 'https://dummyjson.com/products/' + wan_id;
+
+  var wan_body     = document.getElementById('wan_body');
+  var wan_error    = document.getElementById('wan_error');
+  var wan_errorMsg = document.getElementById('wan_error_msg');
+  var wan_reqUrl   = document.getElementById('wan_req_url');
+  var wan_btnPrev  = document.getElementById('wan_btn_prev');
+  var wan_btnNext  = document.getElementById('wan_btn_next');
+  var wan_crumb    = document.getElementById('wan_crumb_name');
+  var wan_stUrl    = document.getElementById('wan_st_url');
+  var wan_stCode   = document.getElementById('wan_st_code');
+  var wan_stTime   = document.getElementById('wan_st_time');
+
+  wan_stUrl.textContent = WAN_API;
+  wan_reqUrl.textContent = WAN_API;
+  wan_btnPrev.disabled = wan_id <= 1;
+
+  /* ---------- 2. 工具函数 ---------- */
+  function wan_esc(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function wan_stars(rate) {
+    var n = Math.round(rate);
+    var s = '';
+    for (var i = 1; i <= 5; i++) { s += i <= n ? '★' : '☆'; }
+    return s;
+  }
+
+  function wan_money(n) {
+    return '$' + Number(n).toFixed(2);
+  }
+
+  function wan_go(newId) {
+    location.href = '17-3-detail.html?id=' + newId;
+  }
+
+  /* ---------- 3. 渲染详情 ---------- */
+  function wan_render(p) {
+    var oldPrice = p.price / (1 - p.discountPercentage / 100);
+    var save = oldPrice - p.price;
+
+    // 库存状态
+    var stockCls = p.stock > 20 ? 'wan_pill_ok' : p.stock > 5 ? 'wan_pill_warn' : 'wan_pill_bad';
+
+    // 画廊（只有一张图时不必显示缩略图条）
+    var imgs = (p.images && p.images.length) ? p.images : [p.thumbnail];
+    var thumbsHtml = imgs.length > 1 ? imgs.map(function (src, i) {
+      return '<button class="wan_thumb' + (i === 0 ? ' wan_thumb_on' : '') + '" type="button" data-src="' +
+        wan_esc(src) + '" aria-label="查看第 ' + (i + 1) + ' 张图">' +
+        '<img src="' + wan_esc(src) + '" alt=""></button>';
+    }).join('') : '';
+
+    // 标签
+    var tagsHtml = (p.tags || []).map(function (t) {
+      return '<span class="wan_tag">' + wan_esc(t) + '</span>';
+    }).join('');
+
+    // 评价
+    var reviewsHtml = (p.reviews || []).map(function (r) {
+      return '<div class="wan_review">' +
+          '<div class="wan_review_head">' +
+            '<b>' + wan_esc(r.reviewerName) + '</b>' +
+            '<span class="wan_stars">' + wan_stars(r.rating) + '</span>' +
+            '<time>' + wan_esc(String(r.date).slice(0, 10)) + '</time>' +
+          '</div>' +
+          '<p>' + wan_esc(r.comment) + '</p>' +
+        '</div>';
+    }).join('') || '<p style="font-size:13.5px;color:#8b90a3;">这件商品暂时还没有评价。</p>';
+
+    // 规格
+    var dims = p.dimensions || {};
+    var specs = [
+      ['商品编号 SKU', '<b>' + wan_esc(p.sku) + '</b>'],
+      ['品牌', wan_esc(p.brand || '—')],
+      ['分类', wan_esc(p.category)],
+      ['库存', p.stock + ' 件（' + wan_esc(p.availabilityStatus) + '）'],
+      ['重量', p.weight + ' kg'],
+      ['尺寸', dims.width + ' × ' + dims.height + ' × ' + dims.depth + ' cm'],
+      ['保修', wan_esc(p.warrantyInformation)],
+      ['运费', wan_esc(p.shippingInformation)],
+      ['退货政策', wan_esc(p.returnPolicy)],
+      ['最小起订量', p.minimumOrderQuantity + ' 件']
+    ];
+    var specsHtml = specs.map(function (row) {
+      return '<tr><th>' + row[0] + '</th><td>' + row[1] + '</td></tr>';
+    }).join('');
+
+    wan_body.innerHTML =
+      '<section class="wan_detail">' +
+        '<div class="wan_gallery">' +
+          '<div class="wan_mainimg"><img id="wan_main_img" src="' + wan_esc(imgs[0]) + '" alt="' + wan_esc(p.title) + '"></div>' +
+          '<div class="wan_thumbs" id="wan_thumbs">' + thumbsHtml + '</div>' +
+        '</div>' +
+        '<div class="wan_info">' +
+          '<span class="wan_cat">' + wan_esc(p.category) + '</span>' +
+          '<h1 class="wan_title">' + wan_esc(p.title) + '</h1>' +
+          '<div class="wan_brand">品牌：<b>' + wan_esc(p.brand || '—') + '</b> · SKU：' + wan_esc(p.sku) + '</div>' +
+          '<div class="wan_score">' +
+            '<span class="wan_stars">' + wan_stars(p.rating) + '</span>' +
+            '<b>' + p.rating.toFixed(2) + '</b>' +
+            '<span>（' + (p.reviews ? p.reviews.length : 0) + ' 条评价）</span>' +
+          '</div>' +
+          '<div class="wan_priceline">' +
+            '<span class="wan_price">' + wan_money(p.price) + '</span>' +
+            '<span class="wan_old">' + wan_money(oldPrice) + '</span>' +
+            '<span class="wan_off">-' + Math.round(p.discountPercentage) + '%</span>' +
+            '<span class="wan_save">省 ' + wan_money(save) + '</span>' +
+          '</div>' +
+          '<div class="wan_stock">' +
+            '<span class="wan_pill ' + stockCls + '">库存 ' + p.stock + ' 件</span>' +
+            '<span class="wan_pill">' + wan_esc(p.availabilityStatus) + '</span>' +
+            '<span class="wan_pill">' + wan_esc(p.shippingInformation) + '</span>' +
+            '<span class="wan_pill">' + wan_esc(p.warrantyInformation) + '</span>' +
+          '</div>' +
+          '<p class="wan_desc">' + wan_esc(p.description) + '</p>' +
+          '<div class="wan_tags">' + tagsHtml + '</div>' +
+          '<div class="wan_actions">' +
+            '<a class="wan_btn wan_btn_primary" href="17-3.html" style="color:#fff;">← 返回商品列表</a>' +
+            '<button class="wan_btn" type="button" id="wan_btn_copy">复制商品链接</button>' +
+          '</div>' +
+        '</div>' +
+      '</section>' +
+
+      '<section class="wan_panel">' +
+        '<h2>商品规格</h2>' +
+        '<table class="wan_specs">' + specsHtml + '</table>' +
+      '</section>' +
+
+      '<section class="wan_panel">' +
+        '<h2>用户评价</h2>' + reviewsHtml +
+      '</section>' +
+
+      '<section class="wan_panel">' +
+        '<h2>接口返回的原始 JSON</h2>' +
+        '<details class="wan_json">' +
+          '<summary>点开查看 ' + WAN_API + ' 的完整响应</summary>' +
+          '<pre id="wan_json_pre"></pre>' +
+        '</details>' +
+      '</section>';
+
+    // JSON 文本（避免被 HTML 解析）
+    document.getElementById('wan_json_pre').textContent = JSON.stringify(p, null, 2);
+
+    // 缩略图切换
+    var wan_mainImg = document.getElementById('wan_main_img');
+    var wan_thumbs = document.getElementById('wan_thumbs');
+    wan_thumbs.addEventListener('click', function (e) {
+      var btn = e.target.closest('.wan_thumb');
+      if (!btn) { return; }
+      wan_mainImg.src = btn.getAttribute('data-src');
+      Array.prototype.forEach.call(wan_thumbs.children, function (el) {
+        el.classList.toggle('wan_thumb_on', el === btn);
+      });
+    });
+
+    // 复制链接
+    document.getElementById('wan_btn_copy').addEventListener('click', function () {
+      var btn = this;
+      var text = location.href;
+      var done = function () {
+        btn.textContent = '已复制 ✓';
+        setTimeout(function () { btn.textContent = '复制商品链接'; }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, done);
+      } else {
+        done();
+      }
+    });
+
+    // 面包屑、标题
+    wan_crumb.innerHTML = '<b>' + wan_esc(p.title) + '</b>';
+    document.title = p.title + ' · 17-3 商品详情';
+  }
+
+  /* ---------- 4. 请求数据 ---------- */
+  function wan_load() {
+    var wanStart = performance.now();
+
+    fetch(WAN_API)
+      .then(function (res) {
+        wan_stCode.textContent = res.status;
+        if (!res.ok) {
+          var wan_txt = res.statusText ? ' ' + res.statusText : '';
+          throw new Error('HTTP ' + res.status + wan_txt +
+            (res.status === 404 ? '（该 ID 没有对应商品，ID 范围约 1~194）' : ''));
+        }
+        return res.json();
+      })
+      .then(function (data) {
+        wan_stTime.textContent = Math.round(performance.now() - wanStart) + ' ms';
+        wan_render(data);
+        wan_btnNext.disabled = false;
+      })
+      .catch(function (err) {
+        wan_stTime.textContent = Math.round(performance.now() - wanStart) + ' ms';
+        wan_body.innerHTML = '';
+        wan_crumb.textContent = '加载失败';
+        wan_errorMsg.textContent = '错误信息：' + err.message;
+        wan_error.hidden = false;
+        wan_btnNext.disabled = true;
+      });
+  }
+
+  /* ---------- 5. 上一件 / 下一件 / 方向键 ---------- */
+  wan_btnPrev.addEventListener('click', function () { wan_go(wan_id - 1); });
+  wan_btnNext.addEventListener('click', function () { wan_go(wan_id + 1); });
+  document.addEventListener('keydown', function (e) {
+    if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) { return; }
+    if (e.key === 'ArrowLeft' && wan_id > 1) { wan_go(wan_id - 1); }
+    if (e.key === 'ArrowRight') { wan_go(wan_id + 1); }
+  });
+
+  wan_load();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>13-4 移动端下导航 · SVG 图标</title>
+  <!-- SVG 方式：引入 iconfont.js（SVG symbol 雪碧图），
+       页面中用 <svg><use xlink:href="#icon-xxx"/></svg> 引用 -->
+  <script src="cdn/iconfont/iconfont.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f4f5f7;
+      color: #333;
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    /* .icon 是 iconfont.js 注入的通用样式（width/height:1em; fill:currentColor），
+       此处按需覆盖尺寸与对齐 */
+    .icon { width: 1em; height: 1em; vertical-align: -0.15em; fill: currentColor; }
+
+    /* ===== 顶部搜索栏 ===== */
+    .search-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    }
+    .search-bar .avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: #dbeafe;
+      display: flex; align-items: center; justify-content: center;
+      color: #2563eb;
+    }
+    .search-bar .avatar .icon { width: 18px; height: 18px; }
+    .search-box {
+      flex: 1;
+      display: flex; align-items: center; gap: 6px;
+      background: #fff;
+      border-radius: 18px;
+      padding: 7px 14px;
+      color: #bbb; font-size: 13px;
+    }
+    .search-box .icon { width: 14px; height: 14px; }
+
+    /* ===== 内容区 ===== */
+    .content { padding: 16px 16px calc(90px + env(safe-area-inset-bottom)); }
+    .banner {
+      border-radius: 12px;
+      background: linear-gradient(120deg, #667eea, #764ba2);
+      color: #fff;
+      padding: 22px 20px;
+      margin-bottom: 16px;
+    }
+    .banner h2 { font-size: 17px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .banner p { font-size: 12px; opacity: .85; line-height: 1.7; }
+    .banner code { background: rgba(255,255,255,.18); padding: 1px 5px; border-radius: 4px; }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+    .card h3 { font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .card p { font-size: 13px; color: #777; line-height: 1.8; }
+    .card .row { display: flex; gap: 10px; margin-top: 10px; }
+    .card .thumb {
+      flex: 1; height: 80px; border-radius: 8px;
+      background: linear-gradient(120deg, #bfdbfe, #93c5fd);
+    }
+    .card .thumb.b { background: linear-gradient(120deg, #c7d2fe, #a5b4fc); }
+    .card .thumb.c { background: linear-gradient(120deg, #bbf7d0, #86efac); }
+
+    .tech-note { font-size: 12px; color: #999; padding: 4px 2px 20px; }
+    .tech-note b { color: #3b82f6; }
+
+    /* SVG 尺寸演示 */
+    .sizes { display: flex; align-items: center; gap: 20px; padding: 6px 0; }
+    .sizes span { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #999; }
+
+    /* ===== 固定的自适应宽度下导航 ===== */
+    .tabbar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;          /* 自适应宽度 */
+      max-width: 480px;
+      display: flex;
+      background: #fff;
+      border-top: 1px solid #ececec;
+      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 999;
+    }
+    .tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 8px 0 6px;
+      text-decoration: none;
+      color: #999;
+      font-size: 11px;
+      cursor: pointer;
+      transition: color .2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tab-item.active { color: #3b82f6; }
+
+    .icon-wrap { position: relative; line-height: 1; }
+    .icon-wrap .icon { width: 24px; height: 24px; }
+
+    /* 数字徽章：右上角 */
+    .badge {
+      position: absolute;
+      top: -5px;
+      right: -16px;
+      min-width: 16px;
+      height: 16px;
+      line-height: 16px;
+      padding: 0 4px;
+      border-radius: 8px;
+      background: #ff3b30;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 600;
+      text-align: center;
+      box-shadow: 0 0 0 1.5px #fff;
+    }
+    /* 红点：右上角 */
+    .dot {
+      position: absolute;
+      top: 0;
+      right: -7px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff3b30;
+      box-shadow: 0 0 0 1.5px #fff;
+    }
+
+    /* 悬浮发布按钮：位于下导航正中间，凸出于导航栏上沿 */
+    .tab-publish {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .publish-btn {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #60a5fa);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      border: 3px solid #fff;
+      box-shadow: 0 4px 10px rgba(59,130,246,.4);
+      transform: translateY(-14px); /* 凸起 */
+      cursor: pointer;
+      transition: transform .15s;
+    }
+    .publish-btn .icon { width: 20px; height: 20px; }
+    .publish-btn:active { transform: translateY(-14px) scale(.92); }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部搜索栏 -->
+  <header class="search-bar">
+    <span class="avatar">
+      <svg class="icon" aria-hidden="true"><use xlink:href="#icon-wode"></use></svg>
+    </span>
+    <div class="search-box">
+      <svg class="icon" aria-hidden="true"><use xlink:href="#icon-sousuo"></use></svg>搜索感兴趣的内容
+    </div>
+  </header>
+
+  <!-- 页面内容 -->
+  <main class="content">
+    <div class="banner">
+      <h2>
+        <svg class="icon" aria-hidden="true" style="width:20px;height:20px"><use xlink:href="#icon-faxian"></use></svg>
+        移动端固定下导航 · SVG 图标方案
+      </h2>
+      <p>图标来自 iconfont 项目的 SVG symbol：<code>&lt;svg&gt;&lt;use xlink:href="#icon-home"/&gt;&lt;/svg&gt;</code>，
+      矢量无限缩放，用 <code>fill: currentColor</code> 跟随文字颜色。
+      下导航 <b>position: fixed</b> 固定于底部，flex 布局自适应宽度，中间为发布按钮。</p>
+    </div>
+
+    <div class="card">
+      <h3>
+        <svg class="icon" aria-hidden="true"><use xlink:href="#icon-fabu"></use></svg>
+        SVG 的优势
+      </h3>
+      <p>iconfont.js 在页面注入 SVG symbol 雪碧图，每个图标是一个 &lt;symbol&gt;，
+      通过 &lt;use&gt; 引用。与字体图标不同：SVG 不存在跨域字体加载问题，
+      支持多色图标，且渲染是矢量路径而非文字。</p>
+      <div class="sizes">
+        <span><svg class="icon" aria-hidden="true" style="width:16px;height:16px"><use xlink:href="#icon-home"></use></svg>16px</span>
+        <span><svg class="icon" aria-hidden="true" style="width:24px;height:24px"><use xlink:href="#icon-home"></use></svg>24px</span>
+        <span><svg class="icon" aria-hidden="true" style="width:32px;height:32px"><use xlink:href="#icon-home"></use></svg>32px</span>
+        <span><svg class="icon" aria-hidden="true" style="width:44px;height:44px"><use xlink:href="#icon-home"></use></svg>44px</span>
+      </div>
+      <div class="row"><div class="thumb"></div><div class="thumb b"></div><div class="thumb c"></div></div>
+    </div>
+
+    <div class="card">
+      <h3>向下滚动试试</h3>
+      <p>下导航固定在视口底部，不随页面滚动；改变视口宽度，导航四项始终保持均分、自适应。</p>
+      <div class="row"><div class="thumb b"></div><div class="thumb c"></div><div class="thumb"></div></div>
+    </div>
+
+    <div class="card">
+      <h3>更多内容占位</h3>
+      <p>徽章说明：数字徽章用于消息数、红点用于新内容提醒，均通过绝对定位放在图标右上角。</p>
+    </div>
+
+    <p class="tech-note">提示：本页使用 <b>SVG</b> 方案；同目录下 <b>13-3.html</b> 为同一导航的 <b>字体图标</b> 方案。</p>
+  </main>
+
+  <!-- 固定的自适应宽度下导航：4 个导航项 + 中间发布按钮 -->
+  <nav class="tabbar">
+    <a class="tab-item active" href="#">
+      <span class="icon-wrap"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-home"></use></svg></span>
+      <span>首页</span>
+    </a>
+    <a class="tab-item" href="#">
+      <span class="icon-wrap"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-sousuo"></use></svg></span>
+      <span>搜索</span>
+    </a>
+    <!-- 中间发布按钮 -->
+    <div class="tab-publish">
+      <div class="publish-btn" title="发布">
+        <svg class="icon" aria-hidden="true"><use xlink:href="#icon-fabu"></use></svg>
+      </div>
+    </div>
+    <a class="tab-item" href="#">
+      <!-- 数字徽章 -->
+      <span class="icon-wrap"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-faxian"></use></svg><span class="badge">6</span></span>
+      <span>发现</span>
+    </a>
+    <a class="tab-item" href="#">
+      <!-- 红点 -->
+      <span class="icon-wrap"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-wode"></use></svg><span class="dot"></span></span>
+      <span>我的</span>
+    </a>
+  </nav>
+
+  <script>
+    document.querySelectorAll('.tab-item').forEach(function (item) {
+      item.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelectorAll('.tab-item').forEach(function (t) { t.classList.remove('active'); });
+        item.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
