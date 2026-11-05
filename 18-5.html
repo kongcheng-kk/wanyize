@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  文件：18-5.html
+  作者：万逸泽（学号 24001010412）
+  建立时间：2026-11-05 14:52
+  使用的大模型：deepseek-v4.1-flash
+  提示词：
+    这是18.4和18.5
+    18.4的两张图分别是18.4和18.5，给他分成两个
+  说明：ECharts 关系图教学页（graph + cartesian2d），从 18-4 拆出，
+        讲清 layout:'none' 与类目轴坐标、links 下标、节点标签与随机数据。
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18-5 ECharts 关系图 · 画在笛卡尔坐标系上</title>
+<style>
+  :root {
+    --wan_bg: #f6f5fb;
+    --wan_card: #ffffff;
+    --wan_line: #e4e1f0;
+    --wan_ink: #201d33;
+    --wan_sub: #665f85;
+    --wan_accent: #4f46e5;
+    --wan_accent2: #f59e0b;
+    --wan_mono: Consolas, "JetBrains Mono", monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: var(--wan_bg); color: var(--wan_ink); line-height: 1.7;
+  }
+  .wan_wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px 40px; }
+
+  .wan_top { display: flex; align-items: center; gap: 12px; padding: 18px 0 6px; font-size: 14px; flex-wrap: wrap; }
+  .wan_top a { color: var(--wan_accent); text-decoration: none; font-weight: 600; }
+  .wan_top a:hover { text-decoration: underline; }
+  .wan_top .wan_sep { color: #c3bede; }
+  h1 { font-size: 27px; margin: 8px 0 4px; letter-spacing: .5px; }
+  .wan_sub1 { color: var(--wan_sub); font-size: 14.5px; margin-bottom: 18px; }
+
+  .wan_hero {
+    background: linear-gradient(135deg, #4338ca 0%, #4f46e5 50%, #8b5cf6 100%);
+    border-radius: 16px; color: #fff; padding: 22px 24px; margin-bottom: 26px;
+    box-shadow: 0 14px 30px -16px rgba(79, 70, 229, .55);
+  }
+  .wan_hero h2 { font-size: 19px; margin-bottom: 8px; }
+  .wan_hero p { font-size: 14.5px; opacity: .96; max-width: 910px; }
+  .wan_hero code { background: rgba(255,255,255,.2); padding: 1px 7px; border-radius: 6px; font-family: var(--wan_mono); font-size: 13px; }
+
+  section { margin-bottom: 34px; }
+  .wan_h2 { display: flex; align-items: baseline; gap: 10px; font-size: 20px; margin-bottom: 4px; }
+  .wan_h2 .wan_no { font-size: 12.5px; color: #4338ca; font-weight: 700; background: #e8e6fb; border-radius: 999px; padding: 2px 10px; }
+  .wan_h2sub { color: var(--wan_sub); font-size: 14px; margin-bottom: 14px; }
+
+  .wan_chartcard {
+    background: var(--wan_card); border: 1px solid var(--wan_line);
+    border-radius: 16px; overflow: hidden;
+    box-shadow: 0 16px 36px -28px rgba(50, 40, 120, .45);
+  }
+  .wan_bar {
+    display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center;
+    padding: 12px 16px; border-bottom: 1px solid var(--wan_line); background: #fbfaff;
+  }
+  .wan_bar .wan_state { font-size: 12.5px; color: #8a84a8; font-family: var(--wan_mono); }
+  .wan_bar .wan_sp { flex: 1; }
+  .wan_btn {
+    border: 1px solid var(--wan_accent); color: #4338ca; background: #eeecfd;
+    border-radius: 9px; padding: 6px 15px; font-size: 13.5px; cursor: pointer;
+    font-family: inherit; transition: .18s;
+  }
+  .wan_btn:hover { background: #e2defb; }
+  .wan_btn[data-on="1"] { background: var(--wan_accent); color: #fff; }
+  .wan_chart { width: 100%; height: 460px; }
+
+  .wan_cards3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .wan_card2 {
+    background: var(--wan_card); border: 1px solid var(--wan_line);
+    border-radius: 13px; padding: 15px 16px; border-top: 3px solid var(--wan_accent);
+  }
+  .wan_card2 h3 { font-size: 15px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .wan_card2 h3 code { font-family: var(--wan_mono); font-size: 12px; color: #4338ca; background: #eeecfd; padding: 1px 6px; border-radius: 5px; }
+  .wan_card2 p { font-size: 13px; color: var(--wan_sub); }
+
+  .wan_code {
+    background: #17142b; color: #e4e0f8; border-radius: 12px;
+    padding: 16px 18px; font-family: var(--wan_mono); font-size: 12.5px;
+    line-height: 1.8; overflow-x: auto; border: 1px solid #2c2748;
+  }
+  .wan_code .wan_c { color: #7b74a3; }
+  .wan_code .wan_k { color: #a5b4fc; }
+  .wan_code .wan_s { color: #a7e8c0; }
+  .wan_code .wan_n { color: #ffcb8b; }
+  .wan_code .wan_t { color: #f0abfc; }
+
+  .wan_tblwrap { overflow-x: auto; border: 1px solid var(--wan_line); border-radius: 13px; background: var(--wan_card); }
+  table { border-collapse: collapse; width: 100%; min-width: 680px; }
+  th, td { padding: 10px 14px; text-align: left; font-size: 13.5px; border-bottom: 1px solid #f0edf9; }
+  th { background: #f9f8fe; color: #544d78; font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  td { color: #474160; }
+  td:first-child { white-space: nowrap; }
+  td code { font-family: var(--wan_mono); font-size: 12px; color: #4338ca; background: #eeecfd; padding: 1px 6px; border-radius: 5px; white-space: nowrap; }
+
+  .wan_grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .wan_pit {
+    background: var(--wan_card); border: 1px solid var(--wan_line);
+    border-left: 4px solid var(--wan_accent2); border-radius: 12px; padding: 14px 16px;
+  }
+  .wan_pit h3 { font-size: 14.5px; margin-bottom: 4px; }
+  .wan_pit h3 .wan_pn { color: #b8820c; font-family: var(--wan_mono); margin-right: 6px; }
+  .wan_pit p { font-size: 13px; color: var(--wan_sub); }
+  .wan_pit code { font-family: var(--wan_mono); font-size: 11.5px; background: #fdf3e0; color: #8a5a06; padding: 0 5px; border-radius: 4px; }
+
+  .wan_note {
+    background: #eeecfd; border: 1px solid #d8d4f7; border-radius: 12px;
+    padding: 13px 16px; font-size: 13.5px; color: #37308f; margin-top: 14px;
+  }
+
+  footer {
+    margin-top: 10px; padding: 18px 0 6px; border-top: 1px solid var(--wan_line);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    color: var(--wan_sub); font-size: 13.5px;
+  }
+  footer a { color: var(--wan_accent); text-decoration: none; font-weight: 600; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 860px) {
+    .wan_cards3 { grid-template-columns: 1fr; }
+    .wan_grid2 { grid-template-columns: 1fr; }
+    h1 { font-size: 22px; }
+    .wan_chart { height: 400px; }
+  }
+</style>
+</head>
+<body>
+<div class="wan_wrap">
+
+  <div class="wan_top">
+    <a href="index.html">← 返回首页</a>
+    <span class="wan_sep">·</span>
+    <a href="18-4.html">← 上一篇：18-4 ECharts 箱线图</a>
+  </div>
+  <h1>18-5 ECharts 关系图 · 画在笛卡尔坐标系上</h1>
+  <div class="wan_sub1">高级网页设计 I · 第 18 章 图形与可视化 —— 把「关系」钉在坐标轴上，而不是让力导向随意摆</div>
+
+  <div class="wan_hero">
+    <h2>关系图不一定靠算法排版</h2>
+    <p>ECharts 的 <code>graph</code> 系列默认用力导向布局：节点互相排斥、连线像弹簧，位置由算法算出来，适合展示「谁和谁有关系」。但只要加上 <code>layout: 'none'</code> 和 <code>coordinateSystem: 'cartesian2d'</code>，节点就会老老实实落在 <strong>x 轴类别 + y 轴数值</strong>交叉的位置上——既能表达关系，又能精确读出数值。这一页就是官方 <code>graph-grid</code> 示例的离线版。</p>
+  </div>
+
+  <!-- ============ 图 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">图</span>一周七天的关系链</div>
+    <div class="wan_h2sub">7 个节点串成一条链：周一到周日。x 轴是类别（故意含一个超长标签），y 轴是数值，箭头表示相邻两天的流向。点「重新生成数据」换一组随机值。</div>
+
+    <div class="wan_chartcard">
+      <div class="wan_bar">
+        <span class="wan_state" id="wan_state">layout: 'none' · coordinateSystem: 'cartesian2d'</span>
+        <span class="wan_sp"></span>
+        <button class="wan_btn" id="wan_toggleLabel" data-on="1">隐藏数值</button>
+        <button class="wan_btn" id="wan_regen">重新生成数据</button>
+      </div>
+      <div class="wan_chart" id="wan_chart"></div>
+    </div>
+  </section>
+
+  <!-- ============ 三个关键配置 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">01</span>三个关键配置</div>
+    <div class="wan_h2sub">普通关系图变成「坐标轴关系图」，只需要这三行。</div>
+    <div class="wan_cards3">
+      <div class="wan_card2">
+        <h3><code>layout: 'none'</code></h3>
+        <p>关掉自动排版。默认值是 <code>'force'</code>（力导向），节点会自己漂移；设成 <code>'none'</code> 后位置完全由你给的数据决定。</p>
+      </div>
+      <div class="wan_card2">
+        <h3><code>coordinateSystem</code></h3>
+        <p><code>'cartesian2d'</code> 表示挂到直角坐标系：第 0 个数对齐 x 轴第 0 个类目，第 1 个数是 y 轴的数值。</p>
+      </div>
+      <div class="wan_card2">
+        <h3><code>edgeSymbol</code></h3>
+        <p><code>['circle', 'arrow']</code>：边的起点画小圆点、终点画箭头。<code>edgeSymbolSize: [4, 10]</code> 控制大小。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 数据结构 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">02</span>数据与连线：全靠下标</div>
+    <div class="wan_h2sub">节点是一个纯数字数组，第 i 个数就站在 x 轴第 i 个类目上；连线用 source / target 指向「第几个节点」。</div>
+    <pre class="wan_code"><span class="wan_c">/* 节点：下标即类别位置，值即 y 轴高度 */</span>
+<span class="wan_k">var</span> wan_axis = [<span class="wan_s">'Mon'</span>, <span class="wan_s">'Tue'</span>, <span class="wan_s">'Wed'</span>, <span class="wan_s">'Very Loooong Thu'</span>, <span class="wan_s">'Fri'</span>, <span class="wan_s">'Sat'</span>, <span class="wan_s">'Sun'</span>];
+<span class="wan_k">var</span> wan_data = [<span class="wan_n">123</span>, <span class="wan_n">456</span>, <span class="wan_n">789</span>, <span class="wan_n">1011</span>, <span class="wan_n">1213</span>, <span class="wan_n">1415</span>, <span class="wan_n">1617</span>];
+
+<span class="wan_c">/* 连线：把相邻两天连起来（0→1、1→2 …） */</span>
+<span class="wan_k">var</span> wan_links = wan_data.map(<span class="wan_k">function</span> (item, i) {
+  <span class="wan_k">return</span> { source: i, target: i + <span class="wan_n">1</span> };
+});
+wan_links.pop();   <span class="wan_c">// 最后一个 6→7 没有第 7 个节点，必须删掉，否则报错</span>
+
+series: [{
+  type: <span class="wan_s">'graph'</span>,
+  layout: <span class="wan_s">'none'</span>,
+  coordinateSystem: <span class="wan_s">'cartesian2d'</span>,
+  data: wan_data,
+  links: wan_links,
+  symbolSize: <span class="wan_n">40</span>,
+  label: { show: <span class="wan_k">true</span>, formatter: <span class="wan_k">function</span> (p) { <span class="wan_k">return</span> p.value[<span class="wan_n">1</span>]; } }
+}]</pre>
+    <div class="wan_note">两个容易忽略的点：① <code>links</code> 里的下标越界不会画出来，但会在控制台报错；② 节点默认标签是「类目名」，长标签（如 Very Loooong Thu）塞进 40px 的圆会被裁成几个字母，所以这里用 <code>formatter</code> 改成显示数值，日期交给 x 轴。</div>
+  </section>
+
+  <!-- ============ 两种 axis ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">03</span>类目轴与数值轴分工</div>
+    <div class="wan_h2sub">一个负责「是谁」，一个负责「多少」，混用就会画歪。</div>
+    <div class="wan_tblwrap">
+      <table>
+        <tr><th style="width:150px;">坐标轴</th><th style="width:150px;">类型</th><th>作用</th></tr>
+        <tr><td>xAxis</td><td><code>category</code></td><td>类目轴，<code>data</code> 给出 7 个日期；节点按数组下标落位，不是按数值</td></tr>
+        <tr><td>yAxis</td><td><code>value</code></td><td>数值轴，节点值决定高度；轴刻度自动生成</td></tr>
+        <tr><td><code>boundaryGap</code></td><td><code>false</code></td><td>让首尾节点贴住绘图区左右边界，不被「半个刻度」的留白挤到中间</td></tr>
+        <tr><td><code>symbolSize</code></td><td><code>40</code></td><td>节点圆直径（px）；标签、箭头大小都跟着它调</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 坑 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">04</span>五个细节</div>
+    <div class="wan_grid2">
+      <div class="wan_pit">
+        <h3><span class="wan_pn">01</span>忘了 pop() 就报错</h3>
+        <p>7 个节点只能有 6 条相邻连线，<code>map</code> 会多生成一条 6→7。<code>links.pop()</code> 就是删掉这条指向不存在节点的边。</p>
+      </div>
+      <div class="wan_pit">
+        <h3><span class="wan_pn">02</span>节点贴着 x 轴</h3>
+        <p>数值小的节点会压住类目名。把 <code>xAxis.axisLabel.margin</code> 调大、<code>grid.bottom</code> 加高，标签就挪到下面去了。</p>
+      </div>
+      <div class="wan_pit">
+        <h3><span class="wan_pn">03</span>类目名太长</h3>
+        <p>示例故意放了 <code>Very Loooong Thu</code>：类目轴会自动换行或旋转，节点标签却会被圆裁切。长文本一律改用数值或缩写。</p>
+      </div>
+      <div class="wan_pit">
+        <h3><span class="wan_pn">04</span>随机数据每次刷新都变</h3>
+        <p><code>Math.random()</code> 在页面加载时执行一次，所以每次刷新图形都不同。要固定效果就把数据写死或用固定种子。</p>
+      </div>
+      <div class="wan_pit">
+        <h3><span class="wan_pn">05</span>第二次 setOption 只传变化部分</h3>
+        <p>换数据时只传 <code>series: [{ data, links }]</code> 就能保留坐标轴与样式；如果整个 option 重传又不加 <code>true</code>，旧配置会叠加。</p>
+      </div>
+      <div class="wan_pit" style="border-left-color:#10b981;">
+        <h3 style="color:#0b7d5c;"><span class="wan_pn" style="color:#10b981;">✓</span>什么时候该用它</h3>
+        <p>既想看「关系」又想读数：任务流、状态机、日程链。纯关系网络（社交图、知识图谱）还是力导向更直观。</p>
+      </div>
+    </div>
+    <div class="wan_note">本页与 18-4 共用同一份 <code>cdn/echarts/echarts.min.js</code>（ECharts 5.5.1），没有额外依赖；两张图现在分别在 <a href="18-4.html" style="color:#37308f;font-weight:600;">18-4 箱线图</a> 与 18-5 关系图。</div>
+  </section>
+
+  <footer>
+    <div>高级网页设计 I · 18-5 ECharts 关系图 · 万逸泽</div>
+    <div><a href="18-4.html">← 上一篇：18-4 箱线图</a>&nbsp;&nbsp;<a href="index.html">← 返回首页</a></div>
+  </footer>
+</div>
+
+<script src="cdn/echarts/echarts.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var wan_$ = function (id) { return document.getElementById(id); };
+  var wan_chart = echarts.init(wan_$('wan_chart'));
+  var wan_axis = ['Mon', 'Tue', 'Wed', 'Very Loooong Thu', 'Fri', 'Sat', 'Sun'];
+  var wan_data = [];
+  var wan_showLabel = true;
+
+  function wan_makeData() {
+    wan_data = wan_axis.map(function (item, i) {
+      return Math.round(Math.random() * 1000 * (i + 1));
+    });
+  }
+
+  function wan_linksOf() {
+    var wan_links = wan_data.map(function (item, i) {
+      return { source: i, target: i + 1 };
+    });
+    wan_links.pop();          /* 最后一个指向不存在的节点，删掉 */
+    return wan_links;
+  }
+
+  function wan_option() {
+    return {
+      title: {
+        text: 'Graph on Cartesian',
+        subtext: '节点画在类目轴上，箭头表示相邻两天的流向',
+        left: 12, top: 6,
+        textStyle: { fontSize: 16, fontWeight: 600, color: '#2b2547' },
+        subtextStyle: { fontSize: 12, color: '#8a84a8' }
+      },
+      tooltip: {
+        formatter: function (p) {
+          if (p.dataType === 'edge') return '流向：' + wan_axis[p.data.source] + ' → ' + wan_axis[p.data.target];
+          return wan_axis[p.dataIndex] + '：' + wan_data[p.dataIndex];
+        }
+      },
+      grid: { left: 60, right: 40, top: 82, bottom: 62 },
+      xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: wan_axis,
+        axisLabel: { fontSize: 11, margin: 20 }
+      },
+      yAxis: { type: 'value' },
+      series: [{
+        type: 'graph',
+        layout: 'none',
+        coordinateSystem: 'cartesian2d',
+        symbolSize: 38,
+        label: {
+          show: wan_showLabel,
+          fontSize: 11,
+          color: '#fff',
+          formatter: function (p) { return p.value[1]; }
+        },
+        itemStyle: { color: '#4f46e5' },
+        edgeSymbol: ['circle', 'arrow'],
+        edgeSymbolSize: [4, 10],
+        data: wan_data,
+        links: wan_linksOf(),
+        lineStyle: { color: '#6b7280', width: 1.4 }
+      }]
+    };
+  }
+
+  wan_makeData();
+  wan_chart.setOption(wan_option());
+
+  wan_$('wan_toggleLabel').addEventListener('click', function () {
+    wan_showLabel = !wan_showLabel;
+    wan_chart.setOption({ series: [{ label: { show: wan_showLabel } }] });
+    this.textContent = wan_showLabel ? '隐藏数值' : '显示数值';
+    this.setAttribute('data-on', wan_showLabel ? '1' : '0');
+  });
+
+  wan_$('wan_regen').addEventListener('click', function () {
+    wan_makeData();
+    wan_chart.setOption({ series: [{ data: wan_data, links: wan_linksOf() }] });
+    wan_$('wan_state').textContent = '新数据：' + wan_data.join(' / ');
+  });
+
+  var wan_lastW = document.documentElement.clientWidth;
+  window.addEventListener('resize', function () {
+    var w = document.documentElement.clientWidth;
+    if (w === wan_lastW) return;
+    wan_lastW = w;
+    wan_chart.resize();
+  });
+})();
+</script>
+</body>
+</html>

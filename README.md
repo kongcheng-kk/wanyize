@@ -20,7 +20,8 @@
 | **18-1** | Canvas 粒子动画 · 粒子拼出「万逸泽」 | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/18-1.html) |
 | **18-2** | Canvas 电商系统全栈架构图（可交互动画） | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/18-2.html) |
 | **18-3** | SVG 知识库智能客服系统架构图（科研方向） | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/18-3.html) |
-| **18-4** | ECharts 两张图：箱线图 + 笛卡尔关系图 | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/18-4.html) |
+| **18-4** | ECharts 箱线图 · 1950 年以来各国收入分布 | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/18-4.html) |
+| **18-5** | ECharts 关系图 · 画在笛卡尔坐标系上 | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/18-5.html) |
 
 > **为什么要用上面的链接？**
 > GitHub 的代码页面（点进 `.html` 文件看到的那一页）只会把 HTML **以源码形式**展示出来，
@@ -41,6 +42,7 @@
 - `18-1.html` —— Canvas 粒子动画：数千粒子按「万逸泽」像素轮廓就位，可切换字样与密度、打散重聚、鼠标推挤，实时 FPS 显示，附三步走、实现原理、API 速查与五个细节
 - `18-2.html` —— Canvas 绘制的电商系统全栈架构图：客户端 / 接入 / 微服务 / 中间件 / 数据 / 第三方六层，逛商品、提交订单、发货通知三条链路的流动数据包动画，节点可点击查看职责说明
 - `18-3.html` —— 内联 SVG 绘制的知识库智能客服系统架构图：七层 26 模块（接入 / 会话 / 语义理解 / RAG 检索 / 生成 / 知识底座 / 运营评测），支持点击模块看职责、播放 11 步问答链路，并附六个科研方向与三层评测指标
-- `18-4.html` —— ECharts 两个图表：箱线图（dataset 的 filter / aggregate / sort 三级变换 + 原始散点）与笛卡尔坐标系上的关系图（graph + cartesian2d）；ECharts 5.5.1、聚合插件与 1540 行示例数据都放在 `cdn/echarts/`，离线可用
+- `18-4.html` —— ECharts 箱线图：dataset 的 filter / aggregate / sort 三级变换，把 1540 行原始表算成 19 个国家的收入分位数，附原始散点开关与 dataZoom；ECharts 5.5.1、聚合插件与示例数据都放在 `cdn/echarts/`，离线可用
+- `18-5.html` —— ECharts 关系图：`layout:'none'` + `coordinateSystem:'cartesian2d'` 把周一到周日 7 个节点钉在类目轴与数值轴上，箭头表示流向，可重新生成随机数据、切换数值标签
 
 每个页面都是自包含的单文件，CSS 与 JavaScript 全部内嵌；图片放在 `image/`，图标字体与库放在 `cdn/`，均以相对路径引用。`cdn/echarts/` 内含 ECharts 主库、聚合变换插件与示例数据（json + 供 file:// 兜底的 js 副本）。

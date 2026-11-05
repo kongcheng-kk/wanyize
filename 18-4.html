@@ -11,15 +11,16 @@
     图二 笛卡尔坐标系上的关系图（graph + cartesian2d）。
     cdn 文件下载到 cdn 目录下，示例来自 echarts.apache.org 的 heatmap-cartesian 与 graph-grid。
     ……（全文见 wan prompt.md）
-  说明：ECharts 数据可视化教学页，两个图均为本地离线资源，含 dataset 变换、
-        箱线图解读、关系图画法与常见坑。
+  说明：ECharts 箱线图教学页（本地离线资源），含 dataset 三级变换、
+        箱线图解读、encode 映射与常见坑。
+  修改记录：2026-11-05 14:50 按用户要求把第二张关系图拆出为 18-5。
   ============================================================
 -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>18-4 ECharts 数据可视化 · 箱线图与笛卡尔关系图</title>
+<title>18-4 ECharts 箱线图 · 1950 年以来各国收入分布</title>
 <style>
   :root {
     --wan_bg: #f7f6f3;
@@ -181,12 +182,12 @@
     <span class="wan_sep">·</span>
     <a href="18-3.html">← 上一篇：18-3 SVG 智能客服架构图</a>
   </div>
-  <h1>18-4 ECharts 数据可视化 · 箱线图与笛卡尔关系图</h1>
-  <div class="wan_sub1">高级网页设计 I · 第 18 章 图形与可视化 —— 两个图表、一套 dataset 变换、全部本地资源</div>
+  <h1>18-4 ECharts 箱线图 · 1950 年以来各国收入分布</h1>
+  <div class="wan_sub1">高级网页设计 I · 第 18 章 图形与可视化 —— 一套 dataset 变换，算出 19 个国家的收入分布</div>
 
   <div class="wan_hero">
     <h2>ECharts：用配置对象画图</h2>
-    <p>ECharts 是 Apache 开源的图表库，核心只有一句话：<code>echarts.init(容器).setOption(配置对象)</code>。本页两个图都来自官方示例并改造成离线版：图一是<strong>箱线图</strong>，用 <code>dataset</code> + 三种 <code>transform</code>（filter、aggregate、sort）把 1400 多行原始表格直接算成分位数；图二是<strong>笛卡尔坐标系上的关系图</strong>，把节点摆到 x 轴类别、y 轴数值的真实坐标上。ECharts、变换插件和 json 数据都已下载到 <code>cdn/echarts/</code>，断网也能打开。</p>
+    <p>ECharts 是 Apache 开源的图表库，核心只有一句话：<code>echarts.init(容器).setOption(配置对象)</code>。本页是官方箱线图示例的离线改造版：用 <code>dataset</code> + 三种 <code>transform</code>（filter、aggregate、sort）把 1400 多行原始表格直接算成 min/Q1/median/Q3/max，再画成 19 个国家的箱线图。ECharts、变换插件和 json 数据都已下载到 <code>cdn/echarts/</code>，断网也能打开。</p>
   </div>
 
   <!-- ============ 图一 ============ -->
@@ -216,25 +217,10 @@
     </div>
   </section>
 
-  <!-- ============ 图二 ============ -->
-  <section>
-    <div class="wan_h2"><span class="wan_no">图 2</span>关系图：画在笛卡尔坐标系上</div>
-    <div class="wan_h2sub">7 个节点是一条链：周一到周日。x 轴是类别（含一个超长标签）、y 轴是数值，箭头表示相邻两天的流向。点「重新生成数据」会换一组随机值。</div>
-
-    <div class="wan_chartcard">
-      <div class="wan_bar">
-        <span class="wan_state" id="wan_c2state">layout: 'none' · coordinateSystem: 'cartesian2d'</span>
-        <span class="wan_sp"></span>
-        <button class="wan_btn" id="wan_regen">重新生成数据</button>
-      </div>
-      <div class="wan_chart wan_short" id="wan_chart2"></div>
-    </div>
-  </section>
-
   <!-- ============ 五步 ============ -->
   <section>
     <div class="wan_h2"><span class="wan_no">01</span>ECharts 五步上手</div>
-    <div class="wan_h2sub">任何 ECharts 页面都逃不出这五步，本页两个图也一样。</div>
+    <div class="wan_h2sub">任何 ECharts 页面都逃不出这五步，本页也一样。</div>
     <div class="wan_grid5">
       <div class="wan_five"><div class="wan_n">1</div><h3>引入脚本</h3><p>页面底部加载 <code>echarts.min.js</code>，本例从本地 cdn 目录引入。</p></div>
       <div class="wan_five"><div class="wan_n">2</div><h3>准备容器</h3><p>一个 <code>div</code>，<strong>必须显式给高度</strong>，否则图表高度为 0 看不见。</p></div>
@@ -334,35 +320,6 @@ legend: { selected: { detail: <span class="wan_k">false</span> } }</pre>
     <div class="wan_note">注意图例 <code>selected</code> 只是把散点「隐藏」了，数据依然算好摆在那里；点顶部按钮或点图例里的 detail，1254 个红点立刻出现——这也是常用的「按需展开细节」交互。</div>
   </section>
 
-  <!-- ============ 图二讲解 ============ -->
-  <section>
-    <div class="wan_h2"><span class="wan_no">04</span>图二：关系图为什么能画在坐标轴上</div>
-    <div class="wan_h2sub">默认的 graph 用自带力导向布局，位置由算法算；指定 <code>coordinateSystem: 'cartesian2d'</code> 后，节点坐标就交给 x / y 轴，可以精确控制。</div>
-    <pre class="wan_code"><span class="wan_c">/* 关键三行：布局交给坐标轴，节点大小 40，边两端用圆点和箭头 */</span>
-series: [{
-  type: <span class="wan_s">'graph'</span>,
-  layout: <span class="wan_s">'none'</span>,                 <span class="wan_c">// 不自动排版，位置由数据决定</span>
-  coordinateSystem: <span class="wan_s">'cartesian2d'</span>, <span class="wan_c">// 挂到直角坐标系上</span>
-  symbolSize: <span class="wan_n">40</span>,
-  data: wan_data,                    <span class="wan_c">// [123, 456, ...] 自动对应 x 轴第 0、1… 个类别</span>
-  links: wan_links,                  <span class="wan_c">// [{ source: 0, target: 1 }, ...]</span>
-  edgeSymbol: [<span class="wan_s">'circle'</span>, <span class="wan_s">'arrow'</span>],
-  edgeSymbolSize: [<span class="wan_n">4</span>, <span class="wan_n">10</span>],
-  lineStyle: { color: <span class="wan_s">'#2f4554'</span> }
-}],
-xAxis: { type: <span class="wan_s">'category'</span>, boundaryGap: <span class="wan_k">false</span>, data: wan_axis }</pre>
-    <div class="wan_grid2" style="margin-top:14px;">
-      <div class="wan_rc">
-        <h3><span class="wan_dot"></span>数组下标就是坐标</h3>
-        <p>节点数据是一个纯数字数组，第 i 个数自动对齐 x 轴第 i 个类别；<code>links</code> 里的 source / target 也是下标，所以「相邻两天相连」用 <code>map</code> 生成后 <code>pop()</code> 掉最后一个越界链接。</p>
-      </div>
-      <div class="wan_rc">
-        <h3><span class="wan_dot"></span>超长标签会自己让位</h3>
-        <p>示例故意放了一个 <code>Very Loooong Thu</code>：类目轴会自动旋转或省略标签，图表不会因此错位——这是检验布局是否健壮的小技巧。</p>
-      </div>
-    </div>
-  </section>
-
   <!-- ============ 表格 ============ -->
   <section>
     <div class="wan_h2"><span class="wan_no">05</span>常用 API 与本地资源</div>
@@ -419,12 +376,12 @@ xAxis: { type: <span class="wan_s">'category'</span>, boundaryGap: <span class="
       </div>
     </div>
     <div class="wan_note">为什么还多一个 <code>.js</code> 数据文件？浏览器出于安全限制，<strong>双击本地 HTML（file://）时不允许 fetch 本地 json</strong>。页面优先走 <code>fetch → json</code>（GitHub Pages 与本地服务器都正常），失败时自动退回 <code>&lt;script&gt;</code> 预载的同源副本，状态栏会写明当前用的是哪一种。</div>
-    <div class="wan_note">两个图都做了响应式：缩放窗口会调用 <code>resize()</code>；图一还能用底部的 dataZoom 拖动缩放、滚轮缩放，图二支持重新生成随机数据。</div>
+    <div class="wan_note">图表做了响应式：窗口宽度变化会调用 <code>resize()</code>；还能用底部的 dataZoom 拖动缩放、滚轮缩放。</div>
   </section>
 
   <footer>
     <div>高级网页设计 I · 18-4 ECharts 数据可视化 · 万逸泽</div>
-    <div><a href="18-3.html">← 上一篇：18-3 SVG 架构图</a>&nbsp;&nbsp;<a href="index.html">← 返回首页</a></div>
+    <div><a href="18-3.html">← 上一篇：18-3 SVG 架构图</a>&nbsp;&nbsp;<a href="18-5.html">下一篇：18-5 关系图 →</a>&nbsp;&nbsp;<a href="index.html">← 返回首页</a></div>
   </footer>
 </div>
 
@@ -437,7 +394,6 @@ xAxis: { type: <span class="wan_s">'category'</span>, boundaryGap: <span class="
 
   var wan_$ = function (id) { return document.getElementById(id); };
   var wan_chart1 = null;
-  var wan_chart2 = null;
   var wan_detailOn = false;
 
   /* ================= 图一：箱线图 ================= */
@@ -567,70 +523,6 @@ xAxis: { type: <span class="wan_s">'category'</span>, boundaryGap: <span class="
     }
   }
 
-  /* ================= 图二：graph on cartesian ================= */
-  var wan_axis = ['Mon', 'Tue', 'Wed', 'Very Loooong Thu', 'Fri', 'Sat', 'Sun'];
-  var wan_rand = [];
-
-  function wan_makeData() {
-    wan_rand = wan_axis.map(function (item, i) {
-      return Math.round(Math.random() * 1000 * (i + 1));
-    });
-  }
-
-  function wan_drawChart2() {
-    wan_chart2 = echarts.init(wan_$('wan_chart2'));
-    var wan_links = wan_rand.map(function (item, i) {
-      return { source: i, target: i + 1 };
-    });
-    wan_links.pop();
-
-    wan_chart2.setOption({
-      title: {
-        text: 'Graph on Cartesian',
-        subtext: '节点画在类目轴上，箭头表示相邻两天的流向',
-        left: 12, top: 6,
-        textStyle: { fontSize: 16, fontWeight: 600, color: '#3a2f24' },
-        subtextStyle: { fontSize: 12, color: '#8a7f70' }
-      },
-      tooltip: {},
-      grid: { left: 56, right: 40, top: 78, bottom: 58 },
-      xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: wan_axis,
-        axisLabel: { fontSize: 11, margin: 16 }
-      },
-      yAxis: { type: 'value' },
-      series: [{
-        type: 'graph',
-        layout: 'none',
-        coordinateSystem: 'cartesian2d',
-        symbolSize: 40,
-        /* 类目名太长会撑破 40px 圆点，所以圆内显示数值，日期交给 x 轴 */
-        label: {
-          show: true, fontSize: 11, color: '#fff',
-          formatter: function (p) { return p.value[1]; }
-        },
-        itemStyle: { color: '#e8590c' },
-        edgeSymbol: ['circle', 'arrow'],
-        edgeSymbolSize: [4, 10],
-        data: wan_rand,
-        links: wan_links,
-        lineStyle: { color: '#2f4554', width: 1.4 }
-      }]
-    });
-  }
-
-  wan_$('wan_regen').addEventListener('click', function () {
-    wan_makeData();
-    var wan_links = wan_rand.map(function (item, i) {
-      return { source: i, target: i + 1 };
-    });
-    wan_links.pop();
-    wan_chart2.setOption({ series: [{ data: wan_rand, links: wan_links }] });
-    wan_$('wan_c2state').textContent = '已换一组随机值：' + wan_rand.join(' / ');
-  });
-
   /* ================= 交互按钮 ================= */
   wan_$('wan_toggleDetail').addEventListener('click', function () {
     wan_detailOn = !wan_detailOn;
@@ -647,7 +539,6 @@ xAxis: { type: <span class="wan_s">'category'</span>, boundaryGap: <span class="
   var wan_lastW = 0;
   function wan_resizeAll() {
     if (wan_chart1) wan_chart1.resize();
-    if (wan_chart2) wan_chart2.resize();
   }
   window.addEventListener('resize', function () {
     var w = document.documentElement.clientWidth;
@@ -657,8 +548,6 @@ xAxis: { type: <span class="wan_s">'category'</span>, boundaryGap: <span class="
   });
   wan_lastW = document.documentElement.clientWidth;
 
-  wan_makeData();
-  wan_drawChart2();
   wan_loadData();
 })();
 </script>
