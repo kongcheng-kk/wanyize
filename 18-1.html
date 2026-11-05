@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  文件：18-1.html
+  作者：万逸泽（学号 24001010412）
+  建立时间：2026-11-05 13:36
+  使用的大模型：deepseek-v4.1-flash
+  提示词：
+    完成18-1.html和18.2.html ，第一个显示canvas动画，包括文字万逸泽，
+    第二个显示基于canvas的全栈系统的系统框架图（电商系统）
+  说明：Canvas 粒子动画教学页，粒子实时拼出「万逸泽」，可切换字样、
+        调节密度、打散重聚、鼠标推挤，并附实现原理与 API 讲解。
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18-1 Canvas 动画 · 粒子文字「万逸泽」</title>
+<style>
+  :root {
+    --wan_bg: #f4f6fb;
+    --wan_card: #ffffff;
+    --wan_line: #e2e8f4;
+    --wan_ink: #1b2540;
+    --wan_sub: #64748f;
+    --wan_accent: #6d5df6;
+    --wan_accent2: #a78bfa;
+    --wan_mono: Consolas, "JetBrains Mono", monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: var(--wan_bg);
+    color: var(--wan_ink);
+    line-height: 1.7;
+  }
+  .wan_wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px 40px; }
+
+  /* ---------- 顶部 ---------- */
+  .wan_top {
+    display: flex; align-items: center; gap: 12px;
+    padding: 18px 0 6px; font-size: 14px;
+  }
+  .wan_top a {
+    color: var(--wan_accent); text-decoration: none; font-weight: 600;
+  }
+  .wan_top a:hover { text-decoration: underline; }
+  .wan_top .wan_sep { color: #b6c2d9; }
+  h1 { font-size: 27px; margin: 8px 0 4px; letter-spacing: .5px; }
+  .wan_sub1 { color: var(--wan_sub); font-size: 14.5px; margin-bottom: 18px; }
+
+  .wan_hero {
+    background: linear-gradient(135deg, #6d5df6 0%, #8b5cf6 45%, #c084fc 100%);
+    border-radius: 16px; color: #fff; padding: 22px 24px; margin-bottom: 26px;
+    box-shadow: 0 14px 30px -16px rgba(109, 93, 246, .65);
+  }
+  .wan_hero h2 { font-size: 19px; margin-bottom: 8px; }
+  .wan_hero p { font-size: 14.5px; opacity: .95; max-width: 820px; }
+  .wan_hero code {
+    background: rgba(255, 255, 255, .18); padding: 1px 7px; border-radius: 6px;
+    font-family: var(--wan_mono); font-size: 13px;
+  }
+
+  section { margin-bottom: 34px; }
+  .wan_h2 {
+    display: flex; align-items: baseline; gap: 10px;
+    font-size: 20px; margin-bottom: 4px;
+  }
+  .wan_h2 .wan_no {
+    font-size: 12.5px; color: var(--wan_accent); font-weight: 700;
+    background: #efeaff; border-radius: 999px; padding: 2px 10px;
+  }
+  .wan_h2sub { color: var(--wan_sub); font-size: 14px; margin-bottom: 14px; }
+
+  /* ---------- 舞台 ---------- */
+  .wan_stage {
+    background: #0b1020; border-radius: 16px; overflow: hidden;
+    border: 1px solid #1f2a48;
+    box-shadow: 0 18px 40px -22px rgba(20, 28, 60, .8);
+  }
+  .wan_stage canvas { display: block; width: 100%; cursor: crosshair; }
+  .wan_toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center;
+    padding: 14px 16px; background: #101736; border-top: 1px solid #232f57;
+  }
+  .wan_toolbar label {
+    color: #9fb0d8; font-size: 13px; display: flex; align-items: center; gap: 8px;
+  }
+  .wan_toolbar select, .wan_toolbar input[type="range"] {
+    accent-color: #8b7bff; font-family: inherit;
+  }
+  .wan_toolbar select {
+    background: #1a2350; color: #dfe6ff; border: 1px solid #33407a;
+    border-radius: 8px; padding: 5px 10px; font-size: 13px; outline: none;
+  }
+  .wan_btn {
+    border: 1px solid #3a4784; background: #1a2350; color: #e6eaff;
+    border-radius: 9px; padding: 7px 16px; font-size: 13.5px; cursor: pointer;
+    transition: .18s; font-family: inherit;
+  }
+  .wan_btn:hover { background: #26316a; border-color: #5566b8; }
+  .wan_btn[data-on="1"] {
+    background: #6d5df6; border-color: #6d5df6; color: #fff;
+  }
+  .wan_chip {
+    font-family: var(--wan_mono); font-size: 12.5px; color: #9fb0d8;
+    background: #0d1430; border: 1px solid #26315c; border-radius: 999px;
+    padding: 4px 12px; margin-left: auto; display: flex; gap: 14px;
+  }
+  .wan_chip b { color: #c9b8ff; font-weight: 600; }
+  .wan_hint {
+    color: #7e8db4; font-size: 12.5px; padding: 0 16px 13px; background: #101736;
+  }
+
+  /* ---------- 代码块 ---------- */
+  .wan_code {
+    background: #0f172e; color: #d7e2ff; border-radius: 12px;
+    padding: 16px 18px; font-family: var(--wan_mono); font-size: 13px;
+    line-height: 1.75; overflow-x: auto; border: 1px solid #233054;
+  }
+  .wan_code .wan_c { color: #6b7ba8; }
+  .wan_code .wan_k { color: #7dd3fc; }
+  .wan_code .wan_s { color: #a5e8b6; }
+  .wan_code .wan_n { color: #ffcb8b; }
+  .wan_code .wan_f { color: #c4b5fd; }
+
+  /* ---------- 三步走 ---------- */
+  .wan_grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .wan_step {
+    background: var(--wan_card); border: 1px solid var(--wan_line);
+    border-radius: 13px; padding: 15px 16px;
+  }
+  .wan_step .wan_sn {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--wan_accent);
+    color: #fff; font-size: 13.5px; font-weight: 700; display: flex;
+    align-items: center; justify-content: center; margin-bottom: 9px;
+  }
+  .wan_step h3 { font-size: 15.5px; margin-bottom: 5px; }
+  .wan_step p { font-size: 13.5px; color: var(--wan_sub); }
+  .wan_step code {
+    font-family: var(--wan_mono); font-size: 12px; color: var(--wan_accent);
+    background: #efeaff; padding: 0 5px; border-radius: 5px;
+  }
+
+  /* ---------- API 表格 ---------- */
+  .wan_tblwrap { overflow-x: auto; border: 1px solid var(--wan_line); border-radius: 13px; background: var(--wan_card); }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; }
+  th, td { padding: 10px 14px; text-align: left; font-size: 13.5px; border-bottom: 1px solid #edf1f9; }
+  th { background: #f7f8fd; color: #475569; font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  td code { font-family: var(--wan_mono); font-size: 12.5px; color: #5b3fd6; background: #f1eeff; padding: 1px 6px; border-radius: 5px; white-space: nowrap; }
+  td { color: #3f4b66; }
+
+  /* ---------- 细节卡 ---------- */
+  .wan_grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .wan_pit {
+    background: var(--wan_card); border: 1px solid var(--wan_line);
+    border-left: 4px solid #f59e0b; border-radius: 12px; padding: 14px 16px;
+  }
+  .wan_pit h3 { font-size: 14.5px; margin-bottom: 4px; }
+  .wan_pit h3 .wan_pn { color: #f59e0b; font-family: var(--wan_mono); margin-right: 6px; }
+  .wan_pit p { font-size: 13px; color: var(--wan_sub); }
+  .wan_pit code { font-family: var(--wan_mono); font-size: 12px; background: #fdf3e0; color: #b45309; padding: 0 5px; border-radius: 4px; }
+
+  .wan_note {
+    background: #eef7ff; border: 1px solid #cfe4fa; border-radius: 12px;
+    padding: 13px 16px; font-size: 13.5px; color: #2c5a86; margin-top: 14px;
+  }
+
+  footer {
+    margin-top: 10px; padding: 18px 0 6px; border-top: 1px solid var(--wan_line);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    color: var(--wan_sub); font-size: 13.5px;
+  }
+  footer a { color: var(--wan_accent); text-decoration: none; font-weight: 600; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 720px) {
+    .wan_grid3, .wan_grid2 { grid-template-columns: 1fr; }
+    h1 { font-size: 22px; }
+    .wan_chip { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wan_wrap">
+
+  <div class="wan_top">
+    <a href="index.html">← 返回首页</a>
+    <span class="wan_sep">·</span>
+    <a href="18-2.html">下一篇：18-2 电商系统框架图 →</a>
+  </div>
+  <h1>18-1 Canvas 动画 · 粒子文字「万逸泽」</h1>
+  <div class="wan_sub1">高级网页设计 I · 第 18 章 Canvas 图形与动画 —— 用几千个粒子把名字画出来</div>
+
+  <div class="wan_hero">
+    <h2>什么是 Canvas？</h2>
+    <p><code>&lt;canvas&gt;</code> 是一张可以用 JavaScript 逐帧作画的「位图画布」。它不像 DOM 那样每个元素都是节点，而是像在纸上画画：画完就只是一堆像素。因此它特别适合<strong>粒子效果、游戏、图表、签名</strong>这类需要大量图形高速重绘的场景。本页的所有动画都由一个 <code>requestAnimationFrame</code> 循环驱动，右下角能看到实时 FPS。</p>
+  </div>
+
+  <!-- ============ 1. 主演示 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">演示</span>粒子聚字 · 万逸泽</div>
+    <div class="wan_h2sub">加载瞬间，几千个粒子按「万逸泽」的像素轮廓就位成形；移动鼠标推开它们，点「打散」或点击画布，看粒子从四面八方重新聚拢回文字。</div>
+
+    <div class="wan_stage">
+      <canvas id="wan_cvs" width="900" height="430"></canvas>
+      <div class="wan_toolbar">
+        <label>字样
+          <select id="wan_text">
+            <option value="万逸泽" selected>万逸泽</option>
+            <option value="CANVAS">CANVAS</option>
+            <option value="2026">2026</option>
+          </select>
+        </label>
+        <label>粒子密度
+          <input type="range" id="wan_gap" min="3" max="9" step="1" value="5">
+          <span id="wan_gapval">5</span>
+        </label>
+        <button class="wan_btn" id="wan_burst">💥 打散</button>
+        <button class="wan_btn" id="wan_pause">暂停</button>
+        <div class="wan_chip"><span>粒子 <b id="wan_count">0</b></span><span>FPS <b id="wan_fps">--</b></span></div>
+      </div>
+      <div class="wan_hint">提示：移动鼠标推挤粒子 · 点击画布 = 炸开 · 拖影是「半透明清屏」制造的残影</div>
+    </div>
+  </section>
+
+  <!-- ============ 2. 三步走 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">01</span>Canvas 使用三步走</div>
+    <div class="wan_h2sub">任何 canvas 程序都是这三步，本页也一样。</div>
+    <div class="wan_grid3">
+      <div class="wan_step">
+        <div class="wan_sn">1</div>
+        <h3>拿到画笔（上下文）</h3>
+        <p>canvas 标签本身只是画框，<code>getContext('2d')</code> 返回的 context 对象才是画笔，所有绘制方法都挂在它身上。</p>
+      </div>
+      <div class="wan_step">
+        <div class="wan_sn">2</div>
+        <h3>设定坐标系</h3>
+        <p>画布内部分辨率由 <code>width / height</code> 属性决定，左上角是 <code>(0,0)</code>，y 轴向下。高分屏要乘 <code>devicePixelRatio</code> 才不模糊。</p>
+      </div>
+      <div class="wan_step">
+        <div class="wan_sn">3</div>
+        <h3>循环重绘</h3>
+        <p>每帧先清屏再重画全部内容，用 <code>requestAnimationFrame</code> 驱动，浏览器会在每次刷新前调用回调，比 <code>setInterval</code> 更顺滑省电。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. 实现原理 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">02</span>粒子文字是怎么「拼」出来的</div>
+    <div class="wan_h2sub">四步：先偷偷画字，再把字变成坐标，最后让粒子追坐标。核心循环就是右侧这段代码。</div>
+    <div class="wan_grid3" style="margin-bottom: 14px;">
+      <div class="wan_step">
+        <div class="wan_sn">1</div>
+        <h3>离屏画字</h3>
+        <p>建一个看不见的 canvas，用大号粗体把「万逸泽」画上去——它只是一张黑白位图。</p>
+      </div>
+      <div class="wan_step">
+        <div class="wan_sn">2</div>
+        <h3>采样像素</h3>
+        <p><code>getImageData()</code> 读出位图数据，每隔 N 个像素检查一次透明度，不透明处记下 (x, y)。</p>
+      </div>
+      <div class="wan_step">
+        <div class="wan_sn">3</div>
+        <h3>粒子追目标</h3>
+        <p>每个粒子记一个目标点，每帧用「弹簧 + 阻尼」把位置往目标拉，就形成了聚拢动画。</p>
+      </div>
+      <div class="wan_step" style="grid-column: span 3;">
+        <h3 style="margin-bottom:10px;">核心循环（真实运行的就是它）</h3>
+        <pre class="wan_code" style="margin:0;"><span class="wan_k">const</span> ctx = wan_cvs.getContext(<span class="wan_s">'2d'</span>);
+
+<span class="wan_k">function</span> <span class="wan_f">wan_loop</span>() {
+  ctx.fillStyle = <span class="wan_s">'rgba(11, 16, 32, .35)'</span>;  <span class="wan_c">// 半透明清屏 → 上一帧留下拖影</span>
+  ctx.fillRect(<span class="wan_n">0</span>, <span class="wan_n">0</span>, wan_w, wan_h);
+
+  <span class="wan_k">for</span> (<span class="wan_k">const</span> wan_p <span class="wan_k">of</span> wan_parts) {
+    wan_p.vx += (wan_p.tx - wan_p.x) * <span class="wan_n">0.012</span>;  <span class="wan_c">// 弹簧力：拉向目标点</span>
+    wan_p.vy += (wan_p.ty - wan_p.y) * <span class="wan_n">0.012</span>;
+    wan_p.vx *= <span class="wan_n">0.9</span>; wan_p.vy *= <span class="wan_n">0.9</span>;        <span class="wan_c">// 阻尼：越飞越慢，防止抖个不停</span>
+    wan_p.x  += wan_p.vx; wan_p.y += wan_p.vy;
+
+    ctx.fillStyle = wan_p.color;
+    ctx.fillRect(wan_p.x, wan_p.y, <span class="wan_n">2</span>, <span class="wan_n">2</span>);      <span class="wan_c">// 画一个小方块粒子</span>
+  }
+  requestAnimationFrame(wan_loop);           <span class="wan_c">// 预约下一帧，循环往复</span>
+}
+requestAnimationFrame(wan_loop);</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4. API 速查 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">03</span>常用 API 速查表</div>
+    <div class="wan_h2sub">本页用到 ★ 标记的五个，其余也是 2D 绘制最高频的一批。</div>
+    <div class="wan_tblwrap">
+      <table>
+        <tr><th style="width:220px;">API</th><th>作用</th><th style="width:80px;">本页</th></tr>
+        <tr><td><code>getContext('2d')</code></td><td>获取 2D 渲染上下文，一切绘制的入口</td><td>★</td></tr>
+        <tr><td><code>fillStyle / fillRect()</code></td><td>设置填充色并画矩形，本页用它画粒子与拖影底</td><td>★</td></tr>
+        <tr><td><code>fillText()</code></td><td>在画布上写字，离屏画「万逸泽」就用它</td><td>★</td></tr>
+        <tr><td><code>getImageData()</code></td><td>读出画布某区域的像素 RGBA 数组，用于采样文字轮廓</td><td>★</td></tr>
+        <tr><td><code>requestAnimationFrame()</code></td><td>请求浏览器在下一次重绘前执行回调，动画的标准驱动方式</td><td>★</td></tr>
+        <tr><td><code>beginPath() / arc() / fill()</code></td><td>画路径与圆：arc 画圆弧，fill 填充</td><td></td></tr>
+        <tr><td><code>createLinearGradient()</code></td><td>创建线性渐变，可赋给 fillStyle / strokeStyle</td><td></td></tr>
+        <tr><td><code>drawImage()</code></td><td>把图片或另一块 canvas 画到当前画布上</td><td></td></tr>
+        <tr><td><code>save() / restore()</code></td><td>保存 / 恢复画笔状态（颜色、变换等），避免状态互相污染</td><td></td></tr>
+        <tr><td><code>translate() / rotate() / scale()</code></td><td>坐标变换：平移、旋转、缩放画笔</td><td></td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 5. 细节与坑 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">04</span>五个必须注意的细节</div>
+    <div class="wan_grid2">
+      <div class="wan_pit">
+        <h3><span class="wan_pn">01</span>高分屏上文字发虚</h3>
+        <p>canvas 的 <code>width</code> 是内部分辨率，CSS 宽度只是显示大小。在 2x 屏上要先把内部分辨率乘 <code>devicePixelRatio</code>，再用 <code>ctx.scale()</code> 缩放画笔，本页已处理。</p>
+      </div>
+      <div class="wan_pit">
+        <h3><span class="wan_pn">02</span>不清屏 = 越画越糊</h3>
+        <p>canvas 是持久的像素，上一帧内容不会自动消失。要么 <code>clearRect</code> 干净重画，要么像本页用半透明 <code>fillRect</code> 制造拖影。</p>
+      </div>
+      <div class="wan_pit">
+        <h3><span class="wan_pn">03</span>改 width/height 会清空画布</h3>
+        <p>给 <code>cvs.width</code> 赋值（哪怕赋同样的数）会重置整块画布并清空画笔状态，需要重新设置 <code>fillStyle</code> 等属性。</p>
+      </div>
+      <div class="wan_pit">
+        <h3><span class="wan_pn">04</span>动画别用 setInterval</h3>
+        <p><code>setInterval(fn, 16)</code> 与屏幕刷新不同步，容易掉帧撕裂；后台标签页还会继续跑。<code>requestAnimationFrame</code> 自动对齐刷新率并在后台暂停。</p>
+      </div>
+      <div class="wan_pit">
+        <h3><span class="wan_pn">05</span>状态要 save / restore</h3>
+        <p><code>translate</code>、<code>rotate</code>、<code>shadowBlur</code> 这类状态是累积的。进门前 <code>save()</code>，出门 <code>restore()</code>，否则下一张图位置全乱。</p>
+      </div>
+      <div class="wan_pit" style="border-left-color: #10b981;">
+        <h3 style="color:#0b7d5c;"><span class="wan_pn" style="color:#10b981;">✓</span>粒子数量要克制</h3>
+        <p>几千个 <code>fillRect</code> 每帧无压力，但几万个加阴影就会掉帧。用「采样间隔」控制数量——拖动上面的密度滑块就能直观感受。</p>
+      </div>
+    </div>
+    <div class="wan_note">本页完整源码约 300 行，全部内嵌在 18-1.html 中；下一篇 <a href="18-2.html" style="color:#2c5a86;font-weight:600;">18-2 电商系统框架图</a> 用同一套 canvas 技术画系统架构。</div>
+  </section>
+
+  <footer>
+    <div>高级网页设计 I · 18-1 Canvas 动画 · 万逸泽</div>
+    <div><a href="18-2.html">下一篇：18-2 电商系统框架图 →</a>&nbsp;&nbsp;<a href="index.html">← 返回首页</a></div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var wan_cvs = document.getElementById('wan_cvs');
+  var wan_ctx = wan_cvs.getContext('2d');
+  var wan_id = function (s) { return document.getElementById(s); };
+
+  var WAN_DPR = Math.min(window.devicePixelRatio || 1, 2);
+  var wan_w = 0, wan_h = 0;                 /* 逻辑尺寸 */
+  var wan_parts = [];
+  var wan_mouse = { x: -9999, y: -9999 };
+  var wan_paused = false;
+  var wan_burstUntil = 0;
+  var wan_fps = 0, wan_lastT = 0, wan_fpsSmooth = 60, wan_frames = 0;
+
+  /* ---------- 尺寸：高分屏适配 ---------- */
+  function wan_resize() {
+    var cssW = wan_cvs.clientWidth;
+    wan_w = cssW;
+    wan_h = 430;
+    wan_cvs.height = Math.round(wan_h * WAN_DPR);
+    wan_cvs.width = Math.round(cssW * WAN_DPR);
+    wan_cvs.style.height = wan_h + 'px';
+    wan_ctx.setTransform(WAN_DPR, 0, 0, WAN_DPR, 0, 0);
+    wan_paintBg();
+    wan_build();
+  }
+
+  function wan_paintBg() {
+    var g = wan_ctx.createLinearGradient(0, 0, 0, wan_h);
+    g.addColorStop(0, '#0b1020');
+    g.addColorStop(1, '#111a38');
+    wan_ctx.fillStyle = g;
+    wan_ctx.fillRect(0, 0, wan_w, wan_h);
+  }
+
+  /* ---------- 离屏画字 + 采样 ---------- */
+  function wan_sample(text, gap) {
+    var off = document.createElement('canvas');
+    off.width = wan_w; off.height = wan_h;
+    var octx = off.getContext('2d');
+    var size = Math.min(wan_h * 0.62, (wan_w * 0.9 / Math.max(text.length, 1)) * 1.35);
+    octx.fillStyle = '#fff';
+    octx.textAlign = 'center';
+    octx.textBaseline = 'middle';
+    octx.font = '900 ' + Math.round(size) + 'px "Microsoft YaHei", "PingFang SC", sans-serif';
+    octx.fillText(text, wan_w / 2, wan_h / 2 + 6);
+
+    var data = octx.getImageData(0, 0, wan_w, wan_h).data;
+    var pts = [];
+    for (var y = 0; y < wan_h; y += gap) {
+      for (var x = 0; x < wan_w; x += gap) {
+        if (data[(y * wan_w + x) * 4 + 3] > 128) {
+          pts.push({ x: x + (Math.random() - .5) * gap * .6, y: y + (Math.random() - .5) * gap * .6 });
+        }
+      }
+    }
+    return pts;
+  }
+
+  function wan_build() {
+    var gap = Number(wan_id('wan_gap').value);
+    var text = wan_id('wan_text').value;
+    var pts = wan_sample(text, gap);
+    wan_parts = pts.map(function (p) {
+      var hue = 200 + (p.x / wan_w) * 130;           /* 青 → 紫 → 粉 */
+      return {
+        /* 出生即就位：加载瞬间文字清晰成形；打散后再看重新聚拢 */
+        x: p.x, y: p.y,
+        vx: 0, vy: 0,
+        tx: p.x, ty: p.y,
+        color: 'hsl(' + hue.toFixed(0) + ' 95% ' + (62 + Math.random() * 10).toFixed(0) + '%)'
+      };
+    });
+    wan_id('wan_count').textContent = wan_parts.length;
+  }
+
+  /* ---------- 主循环 ---------- */
+  function wan_tick(t) {
+    requestAnimationFrame(wan_tick);
+    wan_frames++;
+    if (wan_lastT) {
+      var dt = t - wan_lastT;
+      wan_fpsSmooth = wan_fpsSmooth * 0.92 + (1000 / Math.max(dt, 1)) * 0.08;
+      if (wan_frames % 20 === 0) wan_id('wan_fps').textContent = Math.round(wan_fpsSmooth);
+    }
+    wan_lastT = t;
+    if (wan_paused) return;
+
+    /* 半透明底 = 拖影 */
+    wan_ctx.fillStyle = 'rgba(11, 16, 32, .35)';
+    wan_ctx.fillRect(0, 0, wan_w, wan_h);
+
+    var bursting = Date.now() < wan_burstUntil;
+    for (var i = 0; i < wan_parts.length; i++) {
+      var p = wan_parts[i];
+
+      if (bursting) {
+        /* 打散：不受目标约束，纯惯性飞 */
+        p.x += p.vx; p.y += p.vy;
+        p.vx *= 0.985; p.vy *= 0.985;
+        if (p.x < -20) p.x = wan_w + 20; if (p.x > wan_w + 20) p.x = -20;
+        if (p.y < -20) p.y = wan_h + 20; if (p.y > wan_h + 20) p.y = -20;
+      } else {
+        p.vx += (p.tx - p.x) * 0.012;
+        p.vy += (p.ty - p.y) * 0.012;
+        p.vx *= 0.9; p.vy *= 0.9;
+        p.x += p.vx; p.y += p.vy;
+      }
+
+      /* 鼠标推挤 */
+      var dx = p.x - wan_mouse.x, dy = p.y - wan_mouse.y;
+      var d2 = dx * dx + dy * dy;
+      if (d2 < 4900 && d2 > 0.01) {
+        var d = Math.sqrt(d2);
+        var f = (1 - d / 70) * 2.6;
+        p.vx += (dx / d) * f;
+        p.vy += (dy / d) * f;
+      }
+
+      wan_ctx.fillStyle = p.color;
+      wan_ctx.fillRect(p.x, p.y, 2.2, 2.2);
+    }
+  }
+
+  /* ---------- 交互 ---------- */
+  wan_cvs.addEventListener('mousemove', function (e) {
+    var r = wan_cvs.getBoundingClientRect();
+    wan_mouse.x = (e.clientX - r.left) * (wan_w / r.width);
+    wan_mouse.y = (e.clientY - r.top) * (wan_h / r.height);
+  });
+  wan_cvs.addEventListener('mouseleave', function () { wan_mouse.x = -9999; wan_mouse.y = -9999; });
+  wan_cvs.addEventListener('click', function () { wan_burst(); });
+
+  function wan_burst() {
+    for (var i = 0; i < wan_parts.length; i++) {
+      var a = Math.random() * Math.PI * 2;
+      var s = 2 + Math.random() * 6;
+      wan_parts[i].vx = Math.cos(a) * s;
+      wan_parts[i].vy = Math.sin(a) * s;
+    }
+    wan_burstUntil = Date.now() + 950;
+  }
+
+  wan_id('wan_burst').addEventListener('click', wan_burst);
+
+  wan_id('wan_pause').addEventListener('click', function () {
+    wan_paused = !wan_paused;
+    this.textContent = wan_paused ? '继续' : '暂停';
+    this.setAttribute('data-on', wan_paused ? '1' : '0');
+    if (!wan_paused) wan_lastT = 0;
+  });
+
+  wan_id('wan_text').addEventListener('change', wan_build);
+
+  wan_id('wan_gap').addEventListener('input', function () {
+    wan_id('wan_gapval').textContent = this.value;
+  });
+  wan_id('wan_gap').addEventListener('change', wan_build);
+
+  var wan_rT = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(wan_rT);
+    wan_rT = setTimeout(wan_resize, 200);
+  });
+
+  wan_resize();
+  requestAnimationFrame(wan_tick);
+})();
+</script>
+</body>
+</html>

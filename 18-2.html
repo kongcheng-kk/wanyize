@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  文件：18-2.html
+  作者：万逸泽（学号 24001010412）
+  建立时间：2026-11-05 13:40
+  使用的大模型：deepseek-v4.1-flash
+  提示词：
+    完成18-1.html和18.2.html ，第一个显示canvas动画，包括文字万逸泽，
+    第二个显示基于canvas的全栈系统的系统框架图（电商系统）
+  说明：用 Canvas 绘制电商系统全栈架构图（客户端 → 接入层 → 微服务
+        → 中间件 → 数据层 → 第三方），三条业务链路有流动数据包动画，
+        节点可点击查看职责说明。
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18-2 Canvas 架构图 · 电商系统全栈框架</title>
+<style>
+  :root {
+    --wan_bg: #f4f7f6;
+    --wan_card: #ffffff;
+    --wan_line: #dfe9e6;
+    --wan_ink: #14322b;
+    --wan_sub: #5c7a72;
+    --wan_accent: #0e9aa7;
+    --wan_mono: Consolas, "JetBrains Mono", monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: var(--wan_bg); color: var(--wan_ink); line-height: 1.7;
+  }
+  .wan_wrap { max-width: 1060px; margin: 0 auto; padding: 0 20px 40px; }
+
+  .wan_top { display: flex; align-items: center; gap: 12px; padding: 18px 0 6px; font-size: 14px; flex-wrap: wrap; }
+  .wan_top a { color: var(--wan_accent); text-decoration: none; font-weight: 600; }
+  .wan_top a:hover { text-decoration: underline; }
+  .wan_top .wan_sep { color: #a9c3bd; }
+  h1 { font-size: 27px; margin: 8px 0 4px; letter-spacing: .5px; }
+  .wan_sub1 { color: var(--wan_sub); font-size: 14.5px; margin-bottom: 18px; }
+
+  .wan_hero {
+    background: linear-gradient(135deg, #0e9aa7 0%, #14b8a6 55%, #34d399 100%);
+    border-radius: 16px; color: #fff; padding: 22px 24px; margin-bottom: 26px;
+    box-shadow: 0 14px 30px -16px rgba(14, 154, 167, .6);
+  }
+  .wan_hero h2 { font-size: 19px; margin-bottom: 8px; }
+  .wan_hero p { font-size: 14.5px; opacity: .95; max-width: 860px; }
+  .wan_hero code { background: rgba(255,255,255,.18); padding: 1px 7px; border-radius: 6px; font-family: var(--wan_mono); font-size: 13px; }
+
+  section { margin-bottom: 34px; }
+  .wan_h2 { display: flex; align-items: baseline; gap: 10px; font-size: 20px; margin-bottom: 4px; }
+  .wan_h2 .wan_no { font-size: 12.5px; color: #0b7d88; font-weight: 700; background: #dff3f5; border-radius: 999px; padding: 2px 10px; }
+  .wan_h2sub { color: var(--wan_sub); font-size: 14px; margin-bottom: 14px; }
+
+  /* ---------- 架构图区 ---------- */
+  .wan_diagram {
+    background: var(--wan_card); border: 1px solid var(--wan_line);
+    border-radius: 16px; overflow: hidden;
+    box-shadow: 0 16px 38px -24px rgba(9, 60, 60, .45);
+  }
+  .wan_bar {
+    display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center;
+    padding: 13px 16px; border-bottom: 1px solid var(--wan_line); background: #fafdfd;
+  }
+  .wan_flowbtn {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid #cfe0dc; background: #fff; border-radius: 999px;
+    padding: 6px 14px; font-size: 13px; cursor: pointer; color: #40615a;
+    font-family: inherit; transition: .18s;
+  }
+  .wan_flowbtn .wan_dot { width: 9px; height: 9px; border-radius: 50%; }
+  .wan_flowbtn[data-on="1"] { border-color: currentColor; font-weight: 600; }
+  .wan_flowbtn[data-on="0"] { opacity: .45; text-decoration: line-through; }
+  .wan_bar .wan_sp { flex: 1; }
+  .wan_btn {
+    border: 1px solid #0e9aa7; color: #0b7d88; background: #ecf9fa;
+    border-radius: 9px; padding: 6px 16px; font-size: 13.5px; cursor: pointer;
+    font-family: inherit; transition: .18s;
+  }
+  .wan_btn:hover { background: #d9f2f4; }
+  .wan_btn[data-on="1"] { background: #0e9aa7; color: #fff; }
+  .wan_bar select {
+    font-family: inherit; font-size: 13px; color: #2a5550;
+    border: 1px solid #cfe0dc; border-radius: 8px; padding: 5px 8px; background: #fff; outline: none;
+  }
+  .wan_cwrap { overflow-x: auto; background: linear-gradient(180deg, #fbfeff, #f2f9f8); }
+  .wan_cwrap canvas { display: block; min-width: 780px; width: 100%; cursor: pointer; }
+
+  /* 节点详情面板 */
+  .wan_detail {
+    display: none; margin: 14px 16px 16px; border: 1px solid #cfe0dc;
+    border-radius: 12px; background: #f6fbfa; padding: 13px 16px;
+  }
+  .wan_detail.wan_show { display: block; }
+  .wan_detail h3 { font-size: 15.5px; display: flex; align-items: center; gap: 10px; }
+  .wan_detail .wan_layer {
+    font-size: 11.5px; font-weight: 600; padding: 1px 9px; border-radius: 999px; color: #fff;
+  }
+  .wan_detail p { font-size: 13.5px; color: #3c5a54; margin-top: 5px; }
+  .wan_detail .wan_tech { font-size: 12.5px; color: #0b7d88; font-family: var(--wan_mono); margin-top: 6px; }
+  .wan_detail .wan_close {
+    float: right; border: none; background: none; color: #8aa8a1;
+    font-size: 16px; cursor: pointer; line-height: 1; padding: 2px 6px;
+  }
+
+  /* ---------- 流程步骤 ---------- */
+  .wan_flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .wan_fcard { background: var(--wan_card); border: 1px solid var(--wan_line); border-radius: 13px; padding: 15px 16px; }
+  .wan_fcard h3 { font-size: 15.5px; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .wan_fcard h3 .wan_dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .wan_fcard ol { padding-left: 20px; font-size: 13px; color: #3c5a54; }
+  .wan_fcard li { margin: 3px 0; }
+  .wan_fcard li b { color: #14322b; }
+
+  /* ---------- 表格 ---------- */
+  .wan_tblwrap { overflow-x: auto; border: 1px solid var(--wan_line); border-radius: 13px; background: var(--wan_card); }
+  table { border-collapse: collapse; width: 100%; min-width: 680px; }
+  th, td { padding: 10px 14px; text-align: left; font-size: 13.5px; border-bottom: 1px solid #eef4f2; }
+  th { background: #f6faf9; color: #4b6a63; font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { white-space: nowrap; font-weight: 600; color: #14322b; }
+  td { color: #3c5a54; }
+  td code { font-family: var(--wan_mono); font-size: 12px; color: #0b7d88; background: #e8f5f6; padding: 1px 6px; border-radius: 5px; white-space: nowrap; }
+
+  /* ---------- 为什么分层 ---------- */
+  .wan_grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; }
+  .wan_why { background: var(--wan_card); border: 1px solid var(--wan_line); border-radius: 12px; padding: 14px 15px; }
+  .wan_why .wan_ic { font-size: 20px; margin-bottom: 6px; }
+  .wan_why h3 { font-size: 14.5px; margin-bottom: 4px; }
+  .wan_why p { font-size: 12.8px; color: var(--wan_sub); }
+
+  .wan_note {
+    background: #ecf9fa; border: 1px solid #c8e7ea; border-radius: 12px;
+    padding: 13px 16px; font-size: 13.5px; color: #175e66; margin-top: 14px;
+  }
+
+  footer {
+    margin-top: 10px; padding: 18px 0 6px; border-top: 1px solid var(--wan_line);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    color: var(--wan_sub); font-size: 13.5px;
+  }
+  footer a { color: var(--wan_accent); text-decoration: none; font-weight: 600; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 760px) {
+    .wan_flow, .wan_grid4 { grid-template-columns: 1fr 1fr; }
+    h1 { font-size: 22px; }
+  }
+  @media (max-width: 520px) {
+    .wan_flow, .wan_grid4 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wan_wrap">
+
+  <div class="wan_top">
+    <a href="index.html">← 返回首页</a>
+    <span class="wan_sep">·</span>
+    <a href="18-1.html">← 上一篇：18-1 Canvas 动画</a>
+  </div>
+  <h1>18-2 Canvas 架构图 · 电商系统全栈框架</h1>
+  <div class="wan_sub1">高级网页设计 I · 第 18 章 Canvas 图形与动画 —— 一张会动的电商系统全景图</div>
+
+  <div class="wan_hero">
+    <h2>全栈系统 = 前端 + 接入层 + 后端服务 + 数据 + 第三方</h2>
+    <p>你在浏览器里点一下「提交订单」，请求要经过 <code>客户端 → 网关 → 订单服务 → 库存 → 支付 → 第三方支付 → 消息队列 → 数据库</code> 一整条链路。这张图把每一层都画在 canvas 上，三个彩色数据包动画分别演示<strong>逛商品、提交订单、发货通知</strong>三条真实链路；<strong>点击任意节点</strong>可以看它的职责说明。</p>
+  </div>
+
+  <!-- ============ 1. 架构图 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">演示</span>电商系统全景架构图（Canvas 绘制）</div>
+    <div class="wan_h2sub">整个图由代码逐帧绘制：背景分层色带 → 连线 → 流动数据包 → 节点方块。所有节点都可以点击。</div>
+
+    <div class="wan_diagram">
+      <div class="wan_bar">
+        <span style="font-size:13px;color:#5c7a72;">链路：</span>
+        <button class="wan_flowbtn" data-flow="browse" data-on="1"><span class="wan_dot" style="background:#0ea5b7;"></span>逛商品</button>
+        <button class="wan_flowbtn" data-flow="order" data-on="1"><span class="wan_dot" style="background:#f97316;"></span>提交订单</button>
+        <button class="wan_flowbtn" data-flow="ship" data-on="1"><span class="wan_dot" style="background:#22c55e;"></span>发货通知</button>
+        <span class="wan_sp"></span>
+        <label style="font-size:13px;color:#5c7a72;display:flex;align-items:center;gap:6px;">速度
+          <select id="wan_speed">
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="2">2×</option>
+          </select>
+        </label>
+        <button class="wan_btn" id="wan_pause" data-on="0">暂停动画</button>
+      </div>
+      <div class="wan_cwrap">
+        <canvas id="wan_cvs" width="980" height="820"></canvas>
+      </div>
+      <div class="wan_detail" id="wan_detail">
+        <button class="wan_close" id="wan_dclose">✕</button>
+        <h3 id="wan_dtitle">节点</h3>
+        <p id="wan_ddesc"></p>
+        <div class="wan_tech" id="wan_dtech"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. 三条链路 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">01</span>三条业务链路怎么读这张图</div>
+    <div class="wan_h2sub">颜色与图上的数据包一一对应，跟着包走一遍就是一次真实业务。</div>
+    <div class="wan_flow">
+      <div class="wan_fcard">
+        <h3><span class="wan_dot" style="background:#0ea5b7;"></span>逛商品（读多写少）</h3>
+        <ol>
+          <li><b>浏览器</b>发起请求，先找 <b>CDN</b> 要静态资源</li>
+          <li>动态请求交给 <b>网关</b>，路由到 <b>商品服务</b></li>
+          <li>商品服务先查 <b>Redis</b> 缓存，命中直接返回</li>
+          <li>原路返回：服务 → 网关 → 浏览器渲染页面</li>
+        </ol>
+      </div>
+      <div class="wan_fcard">
+        <h3><span class="wan_dot" style="background:#f97316;"></span>提交订单（钱与库存）</h3>
+        <ol>
+          <li><b>小程序</b>下单 → 网关 → <b>订单服务</b> 创建订单</li>
+          <li>订单服务调 <b>库存服务</b> 扣减，防超卖</li>
+          <li>调 <b>支付服务</b> → 发起 <b>微信支付</b> → 回调验签</li>
+          <li>写 <b>消息队列</b> 异步通知，最终落库 <b>MySQL</b></li>
+        </ol>
+      </div>
+      <div class="wan_fcard">
+        <h3><span class="wan_dot" style="background:#22c55e;"></span>发货通知（异步解耦）</h3>
+        <ol>
+          <li>订单服务把发货事件投递给 <b>消息队列</b></li>
+          <li>消费方调用 <b>物流 API</b> 下单取件</li>
+          <li><b>短信服务</b>给用户发「已发货」通知</li>
+          <li>APP 端收到推送，整条链路结束</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. 分层职责表 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">02</span>六层职责速查表</div>
+    <div class="wan_h2sub">每一层只干一类事，出问题时先定位到层，再定位到节点。</div>
+    <div class="wan_tblwrap">
+      <table>
+        <tr><th style="width:120px;">层级</th><th>职责</th><th>典型技术</th></tr>
+        <tr><td>客户端层</td><td>直接和用户交互：浏览、下单、支付调起</td><td><code>HTML/CSS/JS</code> <code>Vue / React</code> <code>小程序</code></td></tr>
+        <tr><td>接入层</td><td>静态资源加速、统一入口、负载均衡、限流鉴权</td><td><code>CDN</code> <code>Nginx</code> <code>API 网关</code></td></tr>
+        <tr><td>业务服务层</td><td>核心业务逻辑，按领域拆成独立微服务，可单独扩容</td><td><code>Spring Boot</code> <code>Node.js</code> <code>Go</code></td></tr>
+        <tr><td>中间件层</td><td>缓存热点数据、削峰填谷、全文搜索</td><td><code>Redis</code> <code>RabbitMQ / Kafka</code> <code>Elasticsearch</code></td></tr>
+        <tr><td>数据层</td><td>业务数据持久化、静态大文件存储</td><td><code>MySQL 主从</code> <code>对象存储 OSS</code></td></tr>
+        <tr><td>第三方服务</td><td>不自研的能力外包出去：支付、物流、短信</td><td><code>微信支付</code> <code>支付宝</code> <code>快递 100</code></td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 4. 为什么分层 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">03</span>为什么系统要分层</div>
+    <div class="wan_h2sub">四张卡片对应四个最直接的好处。</div>
+    <div class="wan_grid4">
+      <div class="wan_why">
+        <div class="wan_ic">🧩</div>
+        <h3>职责单一</h3>
+        <p>每层只解决一类问题，改支付不影响商品页，改代码的范围可控。</p>
+      </div>
+      <div class="wan_why">
+        <div class="wan_ic">📈</div>
+        <h3>独立扩容</h3>
+        <p>大促只加订单服务的机器，数据库和前端不用跟着动，省钱。</p>
+      </div>
+      <div class="wan_why">
+        <div class="wan_ic">🛡️</div>
+        <h3>故障隔离</h3>
+        <p>短信服务挂了只影响通知，下单主链路照常工作（靠 MQ 解耦）。</p>
+      </div>
+      <div class="wan_why">
+        <div class="wan_ic">🤝</div>
+        <h3>并行开发</h3>
+        <p>前端、后端、运维按层分工，通过接口约定同时开工互不阻塞。</p>
+      </div>
+    </div>
+    <div class="wan_note">这张图里的节点、连线、流动数据包全部由 Canvas API 绘制（<code>fillRect / fillText / arc / lineTo / requestAnimationFrame</code>），和 18-1 是同一套技术栈；节点数据存在 JS 数组里，加一个服务只需加一条数据。</div>
+  </section>
+
+  <footer>
+    <div>高级网页设计 I · 18-2 Canvas 架构图 · 万逸泽</div>
+    <div><a href="18-1.html">← 上一篇：18-1 Canvas 动画</a>&nbsp;&nbsp;<a href="index.html">← 返回首页</a></div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var wan_id = function (s) { return document.getElementById(s); };
+  var wan_cvs = wan_id('wan_cvs');
+  var wan_ctx = wan_cvs.getContext('2d');
+
+  var WAN_W = 980, WAN_H = 820;
+  var WAN_DPR = Math.min(window.devicePixelRatio || 1, 2);
+  wan_cvs.width = WAN_W * WAN_DPR;
+  wan_cvs.height = WAN_H * WAN_DPR;
+  wan_ctx.setTransform(WAN_DPR, 0, 0, WAN_DPR, 0, 0);
+
+  /* ================= 数据 ================= */
+  var wan_layers = [
+    { key: 'client',  name: '客户端层',   y: 60,  color: '#3b82f6' },
+    { key: 'access',  name: '接入层',     y: 185, color: '#6366f1' },
+    { key: 'biz',     name: '业务服务层', y: 318, color: '#8b5cf6' },
+    { key: 'mid',     name: '中间件层',   y: 451, color: '#f59e0b' },
+    { key: 'data',    name: '数据层',     y: 568, color: '#10b981' },
+    { key: 'third',   name: '第三方服务', y: 685, color: '#ec4899' }
+  ];
+
+  var wan_nodes = {
+    web:    { layer: 'client', label: '浏览器 H5', sub: 'Web 商城' },
+    mini:   { layer: 'client', label: '小程序',     sub: '微信商城' },
+    app:    { layer: 'client', label: '手机 APP',   sub: '原生应用' },
+    cdn:    { layer: 'access', label: 'CDN 加速',   sub: '静态资源' },
+    gw:     { layer: 'access', label: 'API 网关',   sub: 'Nginx · 唯一入口' },
+    user:   { layer: 'biz',    label: '用户服务',   sub: '登录 · 会员' },
+    product:{ layer: 'biz',    label: '商品服务',   sub: '商品 · 分类' },
+    order:  { layer: 'biz',    label: '订单服务',   sub: '订单状态机' },
+    stock:  { layer: 'biz',    label: '库存服务',   sub: '防超卖' },
+    pay:    { layer: 'biz',    label: '支付服务',   sub: '聚合支付' },
+    redis:  { layer: 'mid',    label: 'Redis',      sub: '缓存 · 购物车' },
+    mq:     { layer: 'mid',    label: '消息队列',   sub: '削峰 · 异步' },
+    es:     { layer: 'mid',    label: 'Elasticsearch', sub: '商品搜索' },
+    mysql:  { layer: 'data',   label: 'MySQL 主从', sub: '业务数据库' },
+    oss:    { layer: 'data',   label: '对象存储',   sub: '图片 · 视频' },
+    wxpay:  { layer: 'third',  label: '微信支付',   sub: 'JSAPI / Native' },
+    alipay: { layer: 'third',  label: '支付宝',     sub: '异步回调' },
+    wuliu:  { layer: 'third',  label: '物流 API',   sub: '下单 · 轨迹' },
+    sms:    { layer: 'third',  label: '短信服务',   sub: '验证码 · 通知' }
+  };
+
+  var wan_desc = {
+    web:    { d: '电脑与手机浏览器里的 H5 商城：商品浏览、搜索、购物车、下单与支付调起，是离用户最近的一层。', t: 'HTML / CSS / JS · Vue / React' },
+    mini:   { d: '微信小程序商城，免安装、扫码即用，天然打通微信登录与微信支付，是电商最主流的移动入口之一。', t: '小程序框架 · 微信开放能力' },
+    app:    { d: '原生手机应用，性能与体验最好，支持推送通知（发货提醒就走这里），适合高频复购用户。', t: 'iOS / Android · 推送 SDK' },
+    cdn:    { d: '内容分发网络：把商品图片、CSS、JS 缓存到离用户最近的边缘节点，首屏速度能快数倍，也替源站挡掉大量流量。', t: 'CDN · HTTP 缓存策略' },
+    gw:     { d: '全系统唯一入口：HTTPS 卸载、负载均衡把请求分给多台服务器、限流熔断保护后端、鉴权后按路径路由到各微服务。', t: 'Nginx · Spring Cloud Gateway' },
+    user:   { d: '负责注册登录、JWT 签发校验、收货地址、会员等级与积分，其他服务要认人都要问它。', t: 'JWT · OAuth 2.0' },
+    product:{ d: '维护商品与分类、价格、上下架状态，聚合详情页数据；搜索请求会转给 Elasticsearch。', t: '商品领域模型 · 详情聚合' },
+    order:  { d: '订单中枢：创建订单、驱动状态机（待付款 → 待发货 → 已发货 → 已签收），超时未付款自动取消。', t: '状态机 · 分布式事务' },
+    stock:  { d: '库存扣减与回补，用乐观锁或 Redis 预扣防止超卖，是秒杀场景的关键节点。', t: '乐观锁 · Redis 预扣' },
+    pay:    { d: '聚合支付：统一对接微信、支付宝，处理下单、回调验签、退款与对账，业务方只认它一个。', t: '支付路由 · 异步回调验签' },
+    redis:  { d: '内存数据库，存热点商品、购物车、验证码与分布式锁，把数据库从高并发读里解放出来。', t: 'Redis · 缓存穿透/雪崩治理' },
+    mq:     { d: '消息队列：下单高峰先收下请求慢慢消化（削峰填谷），并用「发布-订阅」把订单事件广播给库存、物流、短信，实现解耦。', t: 'RabbitMQ · Kafka' },
+    es:     { d: '全文搜索引擎：分词、倒排索引、相关度排序，支撑「蓝牙耳机 无线」这类模糊搜索。', t: 'Elasticsearch · IK 分词' },
+    mysql:  { d: '核心业务库：订单、用户、商品表都在这里，主从复制 + 读写分离扛住读压力，定期备份。', t: 'MySQL · 主从复制 · 分库分表' },
+    oss:    { d: '对象存储：商品图、详情视频等大文件放这里，配合 CDN 分发，数据库只存 URL。', t: 'OSS / MinIO' },
+    wxpay:  { d: '微信支付：JSAPI（小程序内）、Native（扫码）两种下单方式，支付结果靠异步回调通知，收到后必须验签。', t: '微信支付 API v3' },
+    alipay: { d: '支付宝支付：电脑网站支付、手机 App 支付，同样以异步通知为准，回调需要 RSA 验签。', t: '支付宝开放平台' },
+    wuliu:  { d: '第三方物流平台：发货下单、预约取件、轨迹查询，电商自建车队不现实，接入一家聚合物流 API 即可。', t: '快递 100 / 菜鸟接口' },
+    sms:    { d: '短信服务：登录验证码、发货与签收通知、营销短信，运营商会做频控，需要处理发送失败重试。', t: '腾讯云 SMS / 阿里大于' }
+  };
+
+  /* 布局：每行节点在层色带内均匀分布 */
+  (function wan_layout() {
+    var rows = {
+      client:  ['web', 'mini', 'app'],
+      access:  ['cdn', 'gw'],
+      biz:     ['user', 'product', 'order', 'stock', 'pay'],
+      mid:     ['redis', 'mq', 'es'],
+      data:    ['mysql', 'oss'],
+      third:   ['wxpay', 'alipay', 'wuliu', 'sms']
+    };
+    var nw = { client: 170, access: 250, biz: 160, mid: 210, data: 240, third: 165 };
+    for (var lk in rows) {
+      var keys = rows[lk];
+      var gap = 16;
+      var total = nw[lk] * keys.length + gap * (keys.length - 1);
+      var x = (WAN_W - total) / 2;
+      var ly = null;
+      for (var i = 0; i < wan_layers.length; i++) { if (wan_layers[i].key === lk) ly = wan_layers[i].y; }
+      for (var j = 0; j < keys.length; j++) {
+        var n = wan_nodes[keys[j]];
+        n.x = x; n.y = ly; n.w = nw[lk]; n.h = 52;
+        n.cx = n.x + n.w / 2; n.cy = n.y + n.h / 2;
+        x += nw[lk] + gap;
+      }
+    }
+  })();
+
+  var wan_flows = {
+    browse: { color: '#0ea5b7', path: ['web', 'cdn', 'gw', 'product', 'redis', 'product', 'gw', 'web'] },
+    order:  { color: '#f97316', path: ['mini', 'gw', 'order', 'stock', 'order', 'pay', 'wxpay', 'pay', 'mq', 'mysql'] },
+    ship:   { color: '#22c55e', path: ['order', 'mq', 'wuliu', 'sms', 'app'] }
+  };
+
+  var wan_extraEdges = [
+    ['app', 'gw'], ['user', 'mysql'], ['order', 'mysql'], ['pay', 'mysql'],
+    ['product', 'es'], ['pay', 'alipay'], ['product', 'oss']
+  ];
+
+  /* 预计算路径总长（按节点中心连线） */
+  function wan_segLen(path, i) {
+    var a = wan_nodes[path[i]], b = wan_nodes[path[i + 1]];
+    var dx = b.cx - a.cx, dy = b.cy - a.cy;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  for (var fk in wan_flows) {
+    var f = wan_flows[fk];
+    f.segLens = [];
+    f.total = 0;
+    for (var si = 0; si < f.path.length - 1; si++) {
+      var L = wan_segLen(f.path, si);
+      f.segLens.push(L);
+      f.total += L;
+    }
+  }
+
+  /* ================= 状态 ================= */
+  var wan_on = { browse: true, order: true, ship: true };
+  var wan_speed = 1;
+  var wan_paused = false;
+  var wan_hover = null;
+  var wan_sel = null;
+  var wan_packets = [];
+
+  (function wan_seed() {
+    var PKT_PER = 3;
+    for (var k in wan_flows) {
+      for (var i = 0; i < PKT_PER; i++) {
+        wan_packets.push({ flow: k, d: i / PKT_PER });
+      }
+    }
+  })();
+
+  /* ================= 绘制 ================= */
+  function wan_roundRect(x, y, w, h, r) {
+    wan_ctx.beginPath();
+    wan_ctx.moveTo(x + r, y);
+    wan_ctx.arcTo(x + w, y, x + w, y + h, r);
+    wan_ctx.arcTo(x + w, y + h, x, y + h, r);
+    wan_ctx.arcTo(x, y + h, x, y, r);
+    wan_ctx.arcTo(x, y, x + w, y, r);
+    wan_ctx.closePath();
+  }
+
+  function wan_hex2rgba(hex, a) {
+    var v = parseInt(hex.slice(1), 16);
+    return 'rgba(' + (v >> 16) + ',' + ((v >> 8) & 255) + ',' + (v & 255) + ',' + a + ')';
+  }
+
+  function wan_drawLayers() {
+    for (var i = 0; i < wan_layers.length; i++) {
+      var L = wan_layers[i];
+      wan_ctx.fillStyle = wan_hex2rgba(L.color, 0.05);
+      wan_roundRect(14, L.y - 26, WAN_W - 28, 104, 12);
+      wan_ctx.fill();
+      wan_ctx.strokeStyle = wan_hex2rgba(L.color, 0.22);
+      wan_ctx.setLineDash([5, 4]);
+      wan_ctx.lineWidth = 1;
+      wan_ctx.stroke();
+      wan_ctx.setLineDash([]);
+      wan_ctx.fillStyle = wan_hex2rgba(L.color, 0.85);
+      wan_ctx.font = '600 12px "Microsoft YaHei", sans-serif';
+      wan_ctx.textAlign = 'left';
+      wan_ctx.textBaseline = 'middle';
+      wan_ctx.fillText(L.name + ' ─', 26, L.y - 13);
+    }
+  }
+
+  function wan_allEdges() {
+    var seen = {}, out = [];
+    function add(a, b) {
+      var k = a + '>' + b;
+      if (!seen[k]) { seen[k] = 1; out.push([a, b]); }
+    }
+    for (var k in wan_flows) {
+      var p = wan_flows[k].path;
+      for (var i = 0; i < p.length - 1; i++) add(p[i], p[i + 1]);
+    }
+    for (var e = 0; e < wan_extraEdges.length; e++) add(wan_extraEdges[e][0], wan_extraEdges[e][1]);
+    return out;
+  }
+  var WAN_EDGES = wan_allEdges();
+
+  function wan_drawEdges() {
+    wan_ctx.lineWidth = 1.4;
+    wan_ctx.strokeStyle = '#b9cfc9';
+    for (var i = 0; i < WAN_EDGES.length; i++) {
+      var a = wan_nodes[WAN_EDGES[i][0]], b = wan_nodes[WAN_EDGES[i][1]];
+      wan_ctx.beginPath();
+      wan_ctx.moveTo(a.cx, a.cy);
+      wan_ctx.lineTo(b.cx, b.cy);
+      wan_ctx.stroke();
+      /* 箭头 */
+      var mx = a.cx + (b.cx - a.cx) * 0.5, my = a.cy + (b.cy - a.cy) * 0.5;
+      var ang = Math.atan2(b.cy - a.cy, b.cx - a.cx);
+      wan_ctx.save();
+      wan_ctx.translate(mx, my);
+      wan_ctx.rotate(ang);
+      wan_ctx.fillStyle = '#9fb8b1';
+      wan_ctx.beginPath();
+      wan_ctx.moveTo(5, 0); wan_ctx.lineTo(-4, -3.6); wan_ctx.lineTo(-4, 3.6);
+      wan_ctx.closePath();
+      wan_ctx.fill();
+      wan_ctx.restore();
+    }
+  }
+
+  function wan_posOnFlow(f, d) {
+    var dist = d * f.total;
+    for (var i = 0; i < f.segLens.length; i++) {
+      if (dist <= f.segLens[i] || i === f.segLens.length - 1) {
+        var t = Math.min(dist / f.segLens[i], 1);
+        var a = wan_nodes[f.path[i]], b = wan_nodes[f.path[i + 1]];
+        return { x: a.cx + (b.cx - a.cx) * t, y: a.cy + (b.cy - a.cy) * t };
+      }
+      dist -= f.segLens[i];
+    }
+  }
+
+  function wan_drawPackets() {
+    for (var i = 0; i < wan_packets.length; i++) {
+      var pk = wan_packets[i];
+      if (!wan_on[pk.flow]) continue;
+      var f = wan_flows[pk.flow];
+      var pos = wan_posOnFlow(f, pk.d);
+      wan_ctx.save();
+      wan_ctx.shadowColor = f.color;
+      wan_ctx.shadowBlur = 9;
+      wan_ctx.fillStyle = f.color;
+      wan_ctx.beginPath();
+      wan_ctx.arc(pos.x, pos.y, 4.2, 0, Math.PI * 2);
+      wan_ctx.fill();
+      wan_ctx.restore();
+      wan_ctx.fillStyle = '#ffffff';
+      wan_ctx.beginPath();
+      wan_ctx.arc(pos.x, pos.y, 1.6, 0, Math.PI * 2);
+      wan_ctx.fill();
+    }
+  }
+
+  function wan_drawNode(key) {
+    var n = wan_nodes[key];
+    var Lc = null;
+    for (var i = 0; i < wan_layers.length; i++) { if (wan_layers[i].key === n.layer) Lc = wan_layers[i].color; }
+    var hov = wan_hover === key, sel = wan_sel === key;
+
+    wan_ctx.save();
+    if (hov || sel) {
+      wan_ctx.shadowColor = wan_hex2rgba(Lc, 0.55);
+      wan_ctx.shadowBlur = sel ? 16 : 10;
+    }
+    wan_ctx.fillStyle = hov || sel ? wan_hex2rgba(Lc, 0.14) : '#ffffff';
+    wan_roundRect(n.x, n.y, n.w, n.h, 10);
+    wan_ctx.fill();
+    wan_ctx.restore();
+
+    wan_ctx.lineWidth = sel ? 2 : 1.3;
+    wan_ctx.strokeStyle = hov || sel ? Lc : wan_hex2rgba(Lc, 0.5);
+    wan_roundRect(n.x, n.y, n.w, n.h, 10);
+    wan_ctx.stroke();
+
+    wan_ctx.textAlign = 'center';
+    wan_ctx.textBaseline = 'middle';
+    wan_ctx.fillStyle = '#173229';
+    wan_ctx.font = '600 14px "Microsoft YaHei", sans-serif';
+    wan_ctx.fillText(n.label, n.cx, n.y + 20);
+    wan_ctx.fillStyle = '#7d968f';
+    wan_ctx.font = '11px "Microsoft YaHei", sans-serif';
+    wan_ctx.fillText(n.sub, n.cx, n.y + 38);
+  }
+
+  function wan_paint() {
+    wan_ctx.clearRect(0, 0, WAN_W, WAN_H);
+    wan_drawLayers();
+    wan_drawEdges();
+    wan_drawPackets();
+    for (var k in wan_nodes) wan_drawNode(k);
+  }
+
+  /* ================= 动画 ================= */
+  var wan_last = 0;
+  function wan_tick(t) {
+    requestAnimationFrame(wan_tick);
+    var dt = wan_last ? Math.min((t - wan_last) / 1000, 0.1) : 0;
+    wan_last = t;
+    if (!wan_paused) {
+      for (var i = 0; i < wan_packets.length; i++) {
+        var pk = wan_packets[i];
+        var f = wan_flows[pk.flow];
+        var pxSpeed = 130 * wan_speed;
+        pk.d += pxSpeed * dt / f.total;
+        if (pk.d >= 1) pk.d -= 1;
+      }
+      wan_paint();
+    }
+  }
+
+  /* ================= 交互 ================= */
+  function wan_hit(e) {
+    var r = wan_cvs.getBoundingClientRect();
+    var x = (e.clientX - r.left) * (WAN_W / r.width);
+    var y = (e.clientY - r.top) * (WAN_H / r.height);
+    for (var k in wan_nodes) {
+      var n = wan_nodes[k];
+      if (x >= n.x && x <= n.x + n.w && y >= n.y && y <= n.y + n.h) return k;
+    }
+    return null;
+  }
+
+  wan_cvs.addEventListener('mousemove', function (e) {
+    wan_hover = wan_hit(e);
+    wan_cvs.style.cursor = wan_hover ? 'pointer' : 'default';
+    wan_paint();
+  });
+  wan_cvs.addEventListener('mouseleave', function () {
+    wan_hover = null;
+    wan_paint();
+  });
+  wan_cvs.addEventListener('click', function (e) {
+    var k = wan_hit(e);
+    wan_sel = k;
+    var box = wan_id('wan_detail');
+    if (!k) { box.classList.remove('wan_show'); wan_paint(); return; }
+    var n = wan_nodes[k];
+    var Lc = null;
+    for (var i = 0; i < wan_layers.length; i++) { if (wan_layers[i].key === n.layer) Lc = wan_layers[i].color; }
+    wan_id('wan_dtitle').innerHTML = n.label +
+      ' <span class="wan_layer" style="background:' + Lc + ';">' +
+      (function () { for (var i = 0; i < wan_layers.length; i++) if (wan_layers[i].key === n.layer) return wan_layers[i].name; })() +
+      '</span>';
+    wan_id('wan_ddesc').textContent = wan_desc[k].d;
+    wan_id('wan_dtech').textContent = '常用技术：' + wan_desc[k].t;
+    box.classList.add('wan_show');
+    wan_paint();
+  });
+
+  wan_id('wan_dclose').addEventListener('click', function () {
+    wan_sel = null;
+    wan_id('wan_detail').classList.remove('wan_show');
+    wan_paint();
+  });
+
+  var wan_btns = document.querySelectorAll('.wan_flowbtn');
+  for (var bi = 0; bi < wan_btns.length; bi++) {
+    wan_btns[bi].addEventListener('click', function () {
+      var key = this.getAttribute('data-flow');
+      wan_on[key] = !wan_on[key];
+      this.setAttribute('data-on', wan_on[key] ? '1' : '0');
+    });
+  }
+
+  wan_id('wan_speed').addEventListener('change', function () {
+    wan_speed = Number(this.value);
+  });
+
+  wan_id('wan_pause').addEventListener('click', function () {
+    wan_paused = !wan_paused;
+    this.textContent = wan_paused ? '继续动画' : '暂停动画';
+    this.setAttribute('data-on', wan_paused ? '1' : '0');
+  });
+
+  wan_paint();
+  requestAnimationFrame(wan_tick);
+})();
+</script>
+</body>
+</html>
