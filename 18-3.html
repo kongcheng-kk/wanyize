@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  文件：18-3.html
+  作者：万逸泽（学号 24001010412）
+  建立时间：2026-11-05 13:52
+  使用的大模型：deepseek-v4.1-flash
+  提示词：
+    完成18.3.html，其中包括基于知识库智能客服的系统的系统框架图，
+    图的格式为svg，科研方向
+  说明：基于知识库的智能客服系统架构图（内联 SVG 绘制），按科研视角
+        拆解「接入 → 理解 → 检索（RAG）→ 生成 → 评测」链路与研究方向。
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18-3 SVG 架构图 · 基于知识库的智能客服系统</title>
+<style>
+  :root {
+    --wan_bg: #f4f7fc;
+    --wan_card: #ffffff;
+    --wan_line: #dfe7f3;
+    --wan_ink: #17233d;
+    --wan_sub: #5f7191;
+    --wan_accent: #2563eb;
+    --wan_accent2: #4f46e5;
+    --wan_amber: #f59e0b;
+    --wan_mono: Consolas, "JetBrains Mono", monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: var(--wan_bg); color: var(--wan_ink); line-height: 1.7;
+  }
+  .wan_wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px 40px; }
+
+  .wan_top { display: flex; align-items: center; gap: 12px; padding: 18px 0 6px; font-size: 14px; flex-wrap: wrap; }
+  .wan_top a { color: var(--wan_accent); text-decoration: none; font-weight: 600; }
+  .wan_top a:hover { text-decoration: underline; }
+  .wan_top .wan_sep { color: #b3c2da; }
+  h1 { font-size: 27px; margin: 8px 0 4px; letter-spacing: .5px; }
+  .wan_sub1 { color: var(--wan_sub); font-size: 14.5px; margin-bottom: 18px; }
+
+  .wan_hero {
+    background: linear-gradient(135deg, #1d4ed8 0%, #4f46e5 55%, #7c3aed 100%);
+    border-radius: 16px; color: #fff; padding: 22px 24px; margin-bottom: 26px;
+    box-shadow: 0 14px 30px -16px rgba(37, 99, 235, .62);
+  }
+  .wan_hero h2 { font-size: 19px; margin-bottom: 8px; }
+  .wan_hero p { font-size: 14.5px; opacity: .95; max-width: 900px; }
+  .wan_hero code { background: rgba(255,255,255,.18); padding: 1px 7px; border-radius: 6px; font-family: var(--wan_mono); font-size: 13px; }
+
+  section { margin-bottom: 34px; }
+  .wan_h2 { display: flex; align-items: baseline; gap: 10px; font-size: 20px; margin-bottom: 4px; }
+  .wan_h2 .wan_no { font-size: 12.5px; color: #1d4ed8; font-weight: 700; background: #e5edff; border-radius: 999px; padding: 2px 10px; }
+  .wan_h2sub { color: var(--wan_sub); font-size: 14px; margin-bottom: 14px; }
+
+  /* ---------- 图区 ---------- */
+  .wan_figure {
+    background: var(--wan_card); border: 1px solid var(--wan_line);
+    border-radius: 16px; overflow: hidden;
+    box-shadow: 0 16px 38px -26px rgba(23, 35, 61, .5);
+  }
+  .wan_bar {
+    display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center;
+    padding: 12px 16px; border-bottom: 1px solid var(--wan_line); background: #fafcff;
+  }
+  .wan_bar .wan_caption { font-size: 13px; color: #3c527a; min-height: 20px; }
+  .wan_bar .wan_sp { flex: 1; }
+  .wan_btn {
+    border: 1px solid var(--wan_accent); color: #1d4ed8; background: #eef3ff;
+    border-radius: 9px; padding: 6px 15px; font-size: 13.5px; cursor: pointer;
+    font-family: inherit; transition: .18s;
+  }
+  .wan_btn:hover { background: #e0e9ff; }
+  .wan_btn[disabled] { opacity: .5; cursor: default; }
+  .wan_btn.wan_ghost { border-color: #cdd9ec; color: #52678c; background: #fff; }
+  .wan_svgwrap { overflow-x: auto; background: linear-gradient(180deg, #fdfeff, #f7faff); }
+  .wan_svgwrap svg { display: block; min-width: 860px; width: 100%; height: auto; }
+  .wan_tip { display: none; font-size: 12px; color: #8a9ab5; text-align: center; padding: 2px 0 8px; background: #fafcff; }
+
+  /* SVG 元素样式 */
+  .wan_band { fill: #f8fafe; stroke: #dbe6f5; stroke-dasharray: 5 4; }
+  .wan_chip { stroke-width: 1; }
+  .wan_node { cursor: pointer; }
+  .wan_node .wan_box {
+    fill: #ffffff; stroke-width: 1.3; transition: .18s;
+  }
+  .wan_node .wan_strip { opacity: .8; }
+  .wan_node:hover .wan_box { stroke-width: 2.1; }
+  .wan_node:hover .wan_title { fill: #0f2a6b; }
+  .wan_node.wan_on .wan_box { fill: #fff8ea; stroke: var(--wan_amber); stroke-width: 2.4; }
+  .wan_node.wan_on .wan_title { fill: #a75b00; }
+  .wan_svg.wan_playing .wan_node:not(.wan_on) { opacity: .5; }
+  .wan_svg.wan_playing .wan_edge { opacity: .5; }
+  .wan_edge {
+    fill: none; stroke: #a8b9d3; stroke-width: 1.4;
+    marker-end: url(#wan_arw);
+  }
+  .wan_edge.wan_main { stroke: #7396d8; stroke-width: 1.7; marker-end: url(#wan_arw_b); }
+  .wan_edge.wan_dash { stroke: #c9a25a; stroke-dasharray: 5 4; marker-end: url(#wan_arw_d); }
+  .wan_edge.wan_loop { stroke: #4f7fe0; stroke-width: 1.6; stroke-dasharray: 7 5; marker-end: url(#wan_arw_b); }
+  .wan_lbl { font-size: 10.5px; fill: #7a8cab; font-family: var(--wan_mono); }
+  .wan_badge { fill: var(--wan_amber); stroke: #fff; stroke-width: 1.6; }
+  .wan_badgetx { font-size: 9px; fill: #fff; font-weight: 700; }
+
+  .wan_legend {
+    display: flex; flex-wrap: wrap; gap: 8px 22px; padding: 12px 18px 14px;
+    border-top: 1px solid var(--wan_line); font-size: 12.5px; color: #5f7191;
+    background: #fafcff;
+  }
+  .wan_legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .wan_legend i.wan_ln { width: 26px; height: 0; border-top: 1.5px solid #a8b9d3; display: inline-block; }
+  .wan_legend i.wan_ln.wan_d { border-top-style: dashed; border-color: #c9a25a; }
+  .wan_legend i.wan_ln.wan_l { border-top-style: dashed; border-color: #4f7fe0; }
+  .wan_legend i.wan_ln.wan_m { border-color: #7396d8; }
+  .wan_legend b.wan_rb {
+    width: 15px; height: 15px; border-radius: 50%; background: var(--wan_amber);
+    color: #fff; font-size: 8.5px; display: inline-flex; align-items: center;
+    justify-content: center; font-weight: 700;
+  }
+
+  .wan_detail {
+    display: none; margin: 0 16px 16px; border: 1px solid #d7e3f7;
+    border-radius: 12px; background: #f6f9ff; padding: 13px 16px;
+  }
+  .wan_detail.wan_show { display: block; }
+  .wan_detail h3 { font-size: 15.5px; display: flex; align-items: center; gap: 10px; }
+  .wan_detail .wan_layer {
+    font-size: 11.5px; font-weight: 600; padding: 1px 9px; border-radius: 999px; color: #fff;
+  }
+  .wan_detail p { font-size: 13.5px; color: #3c527a; margin-top: 5px; }
+  .wan_detail .wan_tech { font-size: 12.5px; color: #1d4ed8; font-family: var(--wan_mono); margin-top: 6px; }
+  .wan_detail .wan_close {
+    float: right; border: none; background: none; color: #93a6c4;
+    font-size: 16px; cursor: pointer; line-height: 1; padding: 2px 6px;
+  }
+
+  /* ---------- 链路步骤 ---------- */
+  .wan_steps { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .wan_stepc {
+    display: flex; gap: 12px; background: var(--wan_card); border: 1px solid var(--wan_line);
+    border-radius: 12px; padding: 12px 14px;
+  }
+  .wan_stepc .wan_num {
+    flex: none; width: 26px; height: 26px; border-radius: 8px; background: #e5edff;
+    color: #1d4ed8; font-size: 12.5px; font-weight: 700; display: flex;
+    align-items: center; justify-content: center; font-family: var(--wan_mono);
+  }
+  .wan_stepc h3 { font-size: 14.5px; margin-bottom: 2px; }
+  .wan_stepc p { font-size: 13px; color: var(--wan_sub); }
+  .wan_stepc code { font-family: var(--wan_mono); font-size: 11.5px; color: #1d4ed8; background: #eef3ff; padding: 0 5px; border-radius: 4px; }
+
+  /* ---------- 研究卡 ---------- */
+  .wan_res { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .wan_rcard {
+    background: var(--wan_card); border: 1px solid var(--wan_line); border-radius: 13px;
+    padding: 15px 16px; border-top: 3px solid var(--wan_accent);
+  }
+  .wan_rcard h3 { font-size: 15px; margin-bottom: 7px; display: flex; gap: 7px; align-items: baseline; }
+  .wan_rcard h3 .wan_qm { color: var(--wan_amber); font-size: 13px; }
+  .wan_rcard dl { font-size: 12.8px; color: var(--wan_sub); }
+  .wan_rcard dt { color: #2b3f63; font-weight: 600; margin-top: 5px; font-size: 12.5px; }
+  .wan_rcard dd { margin: 1px 0 0; }
+  .wan_rcard dd b { color: #1d4ed8; font-weight: 600; font-family: var(--wan_mono); font-size: 12px; }
+
+  /* ---------- 表格 ---------- */
+  .wan_tblwrap { overflow-x: auto; border: 1px solid var(--wan_line); border-radius: 13px; background: var(--wan_card); }
+  table { border-collapse: collapse; width: 100%; min-width: 700px; }
+  th, td { padding: 10px 14px; text-align: left; font-size: 13.5px; border-bottom: 1px solid #eef3fa; }
+  th { background: #f7f9fe; color: #48597a; font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  td { color: #3c527a; }
+  td:first-child { white-space: nowrap; color: #17233d; font-weight: 600; }
+  td code { font-family: var(--wan_mono); font-size: 12px; color: #1d4ed8; background: #eef3ff; padding: 1px 6px; border-radius: 5px; white-space: nowrap; }
+
+  /* ---------- 代码 ---------- */
+  .wan_code {
+    background: #0f172e; color: #d7e2ff; border-radius: 12px;
+    padding: 16px 18px; font-family: var(--wan_mono); font-size: 12.5px;
+    line-height: 1.8; overflow-x: auto; border: 1px solid #233054;
+  }
+  .wan_code .wan_c { color: #6b7ba8; }
+  .wan_code .wan_k { color: #7dd3fc; }
+  .wan_code .wan_s { color: #a5e8b6; }
+  .wan_code .wan_n { color: #ffcb8b; }
+  .wan_code .wan_t { color: #c4b5fd; }
+
+  .wan_grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .wan_pit {
+    background: var(--wan_card); border: 1px solid var(--wan_line);
+    border-left: 4px solid var(--wan_amber); border-radius: 12px; padding: 14px 16px;
+  }
+  .wan_pit h3 { font-size: 14.5px; margin-bottom: 4px; }
+  .wan_pit h3 .wan_pn { color: var(--wan_amber); font-family: var(--wan_mono); margin-right: 6px; }
+  .wan_pit p { font-size: 13px; color: var(--wan_sub); }
+  .wan_pit code { font-family: var(--wan_mono); font-size: 11.5px; background: #fdf3e0; color: #b45309; padding: 0 5px; border-radius: 4px; }
+
+  .wan_note {
+    background: #eef3ff; border: 1px solid #cfe0fa; border-radius: 12px;
+    padding: 13px 16px; font-size: 13.5px; color: #24457c; margin-top: 14px;
+  }
+
+  footer {
+    margin-top: 10px; padding: 18px 0 6px; border-top: 1px solid var(--wan_line);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    color: var(--wan_sub); font-size: 13.5px;
+  }
+  footer a { color: var(--wan_accent); text-decoration: none; font-weight: 600; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 820px) {
+    .wan_steps, .wan_grid2 { grid-template-columns: 1fr; }
+    .wan_res { grid-template-columns: 1fr 1fr; }
+    h1 { font-size: 22px; }
+    .wan_tip { display: block; }
+  }
+  @media (max-width: 560px) {
+    .wan_res { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wan_wrap">
+
+  <div class="wan_top">
+    <a href="index.html">← 返回首页</a>
+    <span class="wan_sep">·</span>
+    <a href="18-2.html">← 上一篇：18-2 电商系统架构图</a>
+  </div>
+  <h1>18-3 SVG 架构图 · 基于知识库的智能客服系统</h1>
+  <div class="wan_sub1">高级网页设计 I · 第 18 章 Canvas 与 SVG 图形 —— 一张可交互的科研级系统框架图</div>
+
+  <div class="wan_hero">
+    <h2>研究背景：为什么客服系统要「知识库 + 大模型」</h2>
+    <p>传统规则式客服只能匹配关键词，换个问法就答不上；纯大模型客服又会一本正经地编造政策与价格。主流做法是 <strong>RAG（检索增强生成）</strong>：先把企业知识库做成分块向量索引，用户提问时先<strong>检索</strong>出最相关的若干知识片段，再交给<strong>大模型</strong>基于这些证据作答，并标注引用、无依据则拒答。下图把这套系统拆成七层 26 个模块，橙色「研」标记的是适合作为研究切入点的环节。</p>
+  </div>
+
+  <!-- ============ 1. 架构图 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">图 1</span>系统框架图（内联 SVG 绘制）</div>
+    <div class="wan_h2sub">点击任意模块查看职责与技术选型；点「播放问答链路」可以沿着一条真实问句走完全程。</div>
+
+    <div class="wan_figure">
+      <div class="wan_bar">
+        <button class="wan_btn" id="wan_play">▶ 播放问答链路</button>
+        <button class="wan_btn wan_ghost" id="wan_reset">重置高亮</button>
+        <span class="wan_sp"></span>
+        <span class="wan_caption" id="wan_caption">点击图中模块查看说明</span>
+      </div>
+      <div class="wan_svgwrap">
+        <svg class="wan_svg" viewBox="0 0 1240 780" role="img" aria-label="基于知识库的智能客服系统架构图">
+  <title>基于知识库的智能客服系统架构图：七层 26 模块，含 RAG 检索链路与运营评测闭环</title>
+  <defs>
+    <marker id="wan_arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#a8b9d3"/>
+    </marker>
+    <marker id="wan_arw_b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#7396d8"/>
+    </marker>
+    <marker id="wan_arw_d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#c9a25a"/>
+    </marker>
+    <marker id="wan_arw_l" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#4f7fe0"/>
+    </marker>
+  </defs>
+  <rect class="wan_band" x="16" y="28" width="196" height="402" rx="14"/>
+  <rect class="wan_band" x="226" y="28" width="196" height="402" rx="14"/>
+  <rect class="wan_band" x="436" y="28" width="196" height="402" rx="14"/>
+  <rect class="wan_band" x="646" y="28" width="236" height="402" rx="14"/>
+  <rect class="wan_band" x="896" y="28" width="196" height="402" rx="14"/>
+  <rect class="wan_band" x="24" y="530" width="676" height="170" rx="14"/>
+  <rect class="wan_band" x="724" y="530" width="492" height="170" rx="14"/>
+  <g><rect class="wan_chip" x="24" y="34" width="118" height="24" rx="12" fill="rgba(59,130,246,0.09)" stroke="rgba(59,130,246,0.35)"/><text x="36" y="50" font-size="12" font-weight="600" fill="#3b82f6">① 用户接入层</text></g>
+  <g><rect class="wan_chip" x="234" y="34" width="132" height="24" rx="12" fill="rgba(99,102,241,0.09)" stroke="rgba(99,102,241,0.35)"/><text x="246" y="50" font-size="12" font-weight="600" fill="#6366f1">② 接入与会话层</text></g>
+  <g><rect class="wan_chip" x="444" y="34" width="118" height="24" rx="12" fill="rgba(139,92,246,0.09)" stroke="rgba(139,92,246,0.35)"/><text x="456" y="50" font-size="12" font-weight="600" fill="#8b5cf6">③ 语义理解层</text></g>
+  <g><rect class="wan_chip" x="654" y="34" width="166" height="24" rx="12" fill="rgba(14,165,233,0.09)" stroke="rgba(14,165,233,0.35)"/><text x="666" y="50" font-size="12" font-weight="600" fill="#0ea5e9">④ 知识检索层 · RAG</text></g>
+  <g><rect class="wan_chip" x="904" y="34" width="132" height="24" rx="12" fill="rgba(16,185,129,0.09)" stroke="rgba(16,185,129,0.35)"/><text x="916" y="50" font-size="12" font-weight="600" fill="#10b981">⑤ 生成与答复层</text></g>
+  <g><rect class="wan_chip" x="44" y="544" width="150" height="24" rx="12" fill="rgba(245,158,11,0.09)" stroke="rgba(245,158,11,0.35)"/><text x="56" y="560" font-size="12" font-weight="600" fill="#b8770e">⑥ 知识与数据底座</text></g>
+  <g><rect class="wan_chip" x="744" y="544" width="150" height="24" rx="12" fill="rgba(236,72,153,0.09)" stroke="rgba(236,72,153,0.35)"/><text x="756" y="560" font-size="12" font-weight="600" fill="#c02f71">⑦ 运营与评测闭环</text></g>
+  <path class="wan_edge" d="M204 113 H 214" style="marker-end:none"/>
+  <path class="wan_edge" d="M204 181 H 214" style="marker-end:none"/>
+  <path class="wan_edge" d="M204 249 H 214" style="marker-end:none"/>
+  <path class="wan_edge" d="M204 317 H 214" style="marker-end:none"/>
+  <path class="wan_edge" d="M214 113 V 317" style="marker-end:none"/>
+  <path class="wan_edge" d="M214 129 H 234"/>
+  <path class="wan_edge" d="M324 158 V 172"/>
+  <path class="wan_edge wan_dash" d="M324 230 V 244"/>
+  <path class="wan_edge wan_main" d="M414 129 H 444"/>
+  <path class="wan_edge" d="M534 154 V 166"/>
+  <path class="wan_edge" d="M534 224 V 236"/>
+  <path class="wan_edge wan_main" d="M624 265 C 642 265, 642 113, 654 113"/>
+  <path class="wan_edge wan_main" d="M764 142 V 152"/>
+  <path class="wan_edge wan_main" d="M764 210 V 220"/>
+  <path class="wan_edge wan_main" d="M764 278 V 288"/>
+  <path class="wan_edge wan_main" d="M764 346 V 356"/>
+  <path class="wan_edge wan_main" d="M874 385 C 892 385, 888 169, 904 169"/>
+  <path class="wan_edge" d="M994 198 V 212"/>
+  <path class="wan_edge" d="M994 270 V 284"/>
+  <path class="wan_edge wan_loop" d="M994 342 V 470 H 114 V 360"/>
+  <path class="wan_edge wan_dash" d="M730 470 V 609 H 744"/>
+  <path class="wan_edge" d="M605 580 V 460 H 630 V 250 H 654"/>
+  <path class="wan_edge" d="M194 609 H 206"/>
+  <path class="wan_edge" d="M356 609 H 368"/>
+  <path class="wan_edge" d="M518 609 H 530"/>
+  <path class="wan_edge" d="M852 609 H 862"/>
+  <path class="wan_edge" d="M970 609 H 980"/>
+  <path class="wan_edge" d="M1088 609 H 1098"/>
+  <path class="wan_edge wan_dash" d="M1152 638 V 720 H 443 V 638"/>
+  <text class="wan_lbl" x="554" y="462" text-anchor="middle" fill="#4f7fe0">流式答复 · 引用链接 · 必要时转人工</text>
+  <text class="wan_lbl" x="736" y="502" text-anchor="start">全量会话日志</text>
+  <text class="wan_lbl" x="620" y="312" text-anchor="end">向量召回</text>
+  <text class="wan_lbl" x="126" y="378" text-anchor="start" fill="#4f7fe0">答复回到用户</text>
+  <text class="wan_lbl" x="797" y="736" text-anchor="middle">人工标注 · 新知识沉淀回流</text>
+  <g class="wan_node" data-key="web" data-name="网页客服窗口">
+    <rect class="wan_box" x="24" y="84" width="180" height="58" rx="10" stroke="rgba(59,130,246,0.5)"/>
+    <rect class="wan_strip" x="27.5" y="96" width="4" height="34" rx="2" fill="#3b82f6"/>
+    <text class="wan_title" x="114.0" y="109" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">网页客服窗口</text>
+    <text x="114.0" y="128" text-anchor="middle" font-size="10.5" fill="#7b88a3">Web Chat</text>
+  </g>
+  <g class="wan_node" data-key="wx" data-name="微信 / 小程序">
+    <rect class="wan_box" x="24" y="152" width="180" height="58" rx="10" stroke="rgba(59,130,246,0.5)"/>
+    <rect class="wan_strip" x="27.5" y="164" width="4" height="34" rx="2" fill="#3b82f6"/>
+    <text class="wan_title" x="114.0" y="177" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">微信 / 小程序</text>
+    <text x="114.0" y="196" text-anchor="middle" font-size="10.5" fill="#7b88a3">公众号 · 小程序</text>
+  </g>
+  <g class="wan_node" data-key="phone" data-name="电话语音">
+    <rect class="wan_box" x="24" y="220" width="180" height="58" rx="10" stroke="rgba(59,130,246,0.5)"/>
+    <rect class="wan_strip" x="27.5" y="232" width="4" height="34" rx="2" fill="#3b82f6"/>
+    <text class="wan_title" x="114.0" y="245" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">电话语音</text>
+    <text x="114.0" y="264" text-anchor="middle" font-size="10.5" fill="#7b88a3">ASR · TTS</text>
+  </g>
+  <g class="wan_node" data-key="sdk" data-name="App / 企微 SDK">
+    <rect class="wan_box" x="24" y="288" width="180" height="58" rx="10" stroke="rgba(59,130,246,0.5)"/>
+    <rect class="wan_strip" x="27.5" y="300" width="4" height="34" rx="2" fill="#3b82f6"/>
+    <text class="wan_title" x="114.0" y="313" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">App / 企微 SDK</text>
+    <text x="114.0" y="332" text-anchor="middle" font-size="10.5" fill="#7b88a3">嵌入式客服</text>
+  </g>
+  <g class="wan_node" data-key="gw" data-name="接入网关">
+    <rect class="wan_box" x="234" y="100" width="180" height="58" rx="10" stroke="rgba(99,102,241,0.5)"/>
+    <rect class="wan_strip" x="237.5" y="112" width="4" height="34" rx="2" fill="#6366f1"/>
+    <text class="wan_title" x="324.0" y="125" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">接入网关</text>
+    <text x="324.0" y="144" text-anchor="middle" font-size="10.5" fill="#7b88a3">WebSocket · 鉴权 · 限流</text>
+  </g>
+  <g class="wan_node" data-key="session" data-name="会话管理">
+    <rect class="wan_box" x="234" y="172" width="180" height="58" rx="10" stroke="rgba(99,102,241,0.5)"/>
+    <rect class="wan_strip" x="237.5" y="184" width="4" height="34" rx="2" fill="#6366f1"/>
+    <text class="wan_title" x="324.0" y="197" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">会话管理</text>
+    <text x="324.0" y="216" text-anchor="middle" font-size="10.5" fill="#7b88a3">上下文 · 多轮状态</text>
+  </g>
+  <g class="wan_node" data-key="human" data-name="人工坐席">
+    <rect class="wan_box" x="234" y="244" width="180" height="58" rx="10" stroke="rgba(99,102,241,0.5)"/>
+    <rect class="wan_strip" x="237.5" y="256" width="4" height="34" rx="2" fill="#6366f1"/>
+    <text class="wan_title" x="324.0" y="269" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">人工坐席</text>
+    <text x="324.0" y="288" text-anchor="middle" font-size="10.5" fill="#7b88a3">转接 · 协同</text>
+  </g>
+  <g class="wan_node" data-key="intent" data-name="意图识别">
+    <rect class="wan_box" x="444" y="96" width="180" height="58" rx="10" stroke="rgba(139,92,246,0.5)"/>
+    <rect class="wan_strip" x="447.5" y="108" width="4" height="34" rx="2" fill="#8b5cf6"/>
+    <text class="wan_title" x="534.0" y="121" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">意图识别</text>
+    <text x="534.0" y="140" text-anchor="middle" font-size="10.5" fill="#7b88a3">分类 · 小样本</text>
+  </g>
+  <g class="wan_node" data-key="slot" data-name="槽位抽取">
+    <rect class="wan_box" x="444" y="166" width="180" height="58" rx="10" stroke="rgba(139,92,246,0.5)"/>
+    <rect class="wan_strip" x="447.5" y="178" width="4" height="34" rx="2" fill="#8b5cf6"/>
+    <text class="wan_title" x="534.0" y="191" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">槽位抽取</text>
+    <text x="534.0" y="210" text-anchor="middle" font-size="10.5" fill="#7b88a3">实体 · 参数</text>
+  </g>
+  <g class="wan_node" data-key="dst" data-name="对话状态跟踪">
+    <rect class="wan_box" x="444" y="236" width="180" height="58" rx="10" stroke="rgba(139,92,246,0.5)"/>
+    <rect class="wan_strip" x="447.5" y="248" width="4" height="34" rx="2" fill="#8b5cf6"/>
+    <text class="wan_title" x="534.0" y="261" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">对话状态跟踪</text>
+    <text x="534.0" y="280" text-anchor="middle" font-size="10.5" fill="#7b88a3">DST · 指代消解</text>
+  </g>
+  <g class="wan_node" data-key="rewrite" data-name="查询改写">
+    <rect class="wan_box" x="654" y="84" width="220" height="58" rx="10" stroke="rgba(14,165,233,0.5)"/>
+    <rect class="wan_strip" x="657.5" y="96" width="4" height="34" rx="2" fill="#0ea5e9"/>
+    <text class="wan_title" x="764.0" y="109" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">查询改写</text>
+    <text x="764.0" y="128" text-anchor="middle" font-size="10.5" fill="#7b88a3">HyDE · 同义扩展</text>
+  </g>
+  <g class="wan_node" data-key="embed" data-name="向量化 Embedding">
+    <rect class="wan_box" x="654" y="152" width="220" height="58" rx="10" stroke="rgba(14,165,233,0.5)"/>
+    <rect class="wan_strip" x="657.5" y="164" width="4" height="34" rx="2" fill="#0ea5e9"/>
+    <text class="wan_title" x="764.0" y="177" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">向量化 Embedding</text>
+    <text x="764.0" y="196" text-anchor="middle" font-size="10.5" fill="#7b88a3">BGE · 稠密向量</text>
+  </g>
+  <g class="wan_node" data-key="hybrid" data-name="混合检索">
+    <rect class="wan_box" x="654" y="220" width="220" height="58" rx="10" stroke="rgba(14,165,233,0.5)"/>
+    <rect class="wan_strip" x="657.5" y="232" width="4" height="34" rx="2" fill="#0ea5e9"/>
+    <text class="wan_title" x="764.0" y="245" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">混合检索</text>
+    <text x="764.0" y="264" text-anchor="middle" font-size="10.5" fill="#7b88a3">BM25 + ANN · RRF</text>
+    <circle class="wan_badge" cx="872" cy="222" r="10"/>
+    <text class="wan_badgetx" x="872" y="222" dy="3.2" text-anchor="middle">研</text>
+  </g>
+  <g class="wan_node" data-key="rerank" data-name="重排 Rerank">
+    <rect class="wan_box" x="654" y="288" width="220" height="58" rx="10" stroke="rgba(14,165,233,0.5)"/>
+    <rect class="wan_strip" x="657.5" y="300" width="4" height="34" rx="2" fill="#0ea5e9"/>
+    <text class="wan_title" x="764.0" y="313" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">重排 Rerank</text>
+    <text x="764.0" y="332" text-anchor="middle" font-size="10.5" fill="#7b88a3">Cross-Encoder 精排</text>
+    <circle class="wan_badge" cx="872" cy="290" r="10"/>
+    <text class="wan_badgetx" x="872" y="290" dy="3.2" text-anchor="middle">研</text>
+  </g>
+  <g class="wan_node" data-key="topk" data-name="Top-K 上下文">
+    <rect class="wan_box" x="654" y="356" width="220" height="58" rx="10" stroke="rgba(14,165,233,0.5)"/>
+    <rect class="wan_strip" x="657.5" y="368" width="4" height="34" rx="2" fill="#0ea5e9"/>
+    <text class="wan_title" x="764.0" y="381" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">Top-K 上下文</text>
+    <text x="764.0" y="400" text-anchor="middle" font-size="10.5" fill="#7b88a3">去重 · 来源标注</text>
+  </g>
+  <g class="wan_node" data-key="prompt" data-name="Prompt 组装">
+    <rect class="wan_box" x="904" y="140" width="180" height="58" rx="10" stroke="rgba(16,185,129,0.5)"/>
+    <rect class="wan_strip" x="907.5" y="152" width="4" height="34" rx="2" fill="#10b981"/>
+    <text class="wan_title" x="994.0" y="165" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">Prompt 组装</text>
+    <text x="994.0" y="184" text-anchor="middle" font-size="10.5" fill="#7b88a3">指令 · 历史 · 证据</text>
+  </g>
+  <g class="wan_node" data-key="llm" data-name="大模型生成">
+    <rect class="wan_box" x="904" y="212" width="180" height="58" rx="10" stroke="rgba(16,185,129,0.5)"/>
+    <rect class="wan_strip" x="907.5" y="224" width="4" height="34" rx="2" fill="#10b981"/>
+    <text class="wan_title" x="994.0" y="237" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">大模型生成</text>
+    <text x="994.0" y="256" text-anchor="middle" font-size="10.5" fill="#7b88a3">LLM · 流式输出</text>
+  </g>
+  <g class="wan_node" data-key="post" data-name="后处理">
+    <rect class="wan_box" x="904" y="284" width="180" height="58" rx="10" stroke="rgba(16,185,129,0.5)"/>
+    <rect class="wan_strip" x="907.5" y="296" width="4" height="34" rx="2" fill="#10b981"/>
+    <text class="wan_title" x="994.0" y="309" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">后处理</text>
+    <text x="994.0" y="328" text-anchor="middle" font-size="10.5" fill="#7b88a3">溯源 · 拒答 · 合规</text>
+    <circle class="wan_badge" cx="1082" cy="286" r="10"/>
+    <text class="wan_badgetx" x="1082" y="286" dy="3.2" text-anchor="middle">研</text>
+  </g>
+  <g class="wan_node" data-key="kb" data-name="多源知识">
+    <rect class="wan_box" x="44" y="580" width="150" height="58" rx="10" stroke="rgba(245,158,11,0.5)"/>
+    <rect class="wan_strip" x="47.5" y="592" width="4" height="34" rx="2" fill="#f59e0b"/>
+    <text class="wan_title" x="119.0" y="605" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">多源知识</text>
+    <text x="119.0" y="624" text-anchor="middle" font-size="10.5" fill="#7b88a3">文档 · FAQ · 工单</text>
+  </g>
+  <g class="wan_node" data-key="parse" data-name="解析清洗">
+    <rect class="wan_box" x="206" y="580" width="150" height="58" rx="10" stroke="rgba(245,158,11,0.5)"/>
+    <rect class="wan_strip" x="209.5" y="592" width="4" height="34" rx="2" fill="#f59e0b"/>
+    <text class="wan_title" x="281.0" y="605" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">解析清洗</text>
+    <text x="281.0" y="624" text-anchor="middle" font-size="10.5" fill="#7b88a3">PDF · OCR · 表格</text>
+  </g>
+  <g class="wan_node" data-key="chunk" data-name="分块 Chunking">
+    <rect class="wan_box" x="368" y="580" width="150" height="58" rx="10" stroke="rgba(245,158,11,0.5)"/>
+    <rect class="wan_strip" x="371.5" y="592" width="4" height="34" rx="2" fill="#f59e0b"/>
+    <text class="wan_title" x="443.0" y="605" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">分块 Chunking</text>
+    <text x="443.0" y="624" text-anchor="middle" font-size="10.5" fill="#7b88a3">语义切分 · 重叠</text>
+  </g>
+  <g class="wan_node" data-key="vdb" data-name="向量数据库">
+    <rect class="wan_box" x="530" y="580" width="150" height="58" rx="10" stroke="rgba(245,158,11,0.5)"/>
+    <rect class="wan_strip" x="533.5" y="592" width="4" height="34" rx="2" fill="#f59e0b"/>
+    <text class="wan_title" x="605.0" y="605" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">向量数据库</text>
+    <text x="605.0" y="624" text-anchor="middle" font-size="10.5" fill="#7b88a3">Milvus · FAISS</text>
+  </g>
+  <g class="wan_node" data-key="log" data-name="会话日志">
+    <rect class="wan_box" x="744" y="580" width="108" height="58" rx="10" stroke="rgba(236,72,153,0.5)"/>
+    <rect class="wan_strip" x="747.5" y="592" width="4" height="34" rx="2" fill="#ec4899"/>
+    <text class="wan_title" x="798.0" y="605" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">会话日志</text>
+    <text x="798.0" y="624" text-anchor="middle" font-size="10.5" fill="#7b88a3">全量埋点</text>
+  </g>
+  <g class="wan_node" data-key="eval" data-name="评测指标">
+    <rect class="wan_box" x="862" y="580" width="108" height="58" rx="10" stroke="rgba(236,72,153,0.5)"/>
+    <rect class="wan_strip" x="865.5" y="592" width="4" height="34" rx="2" fill="#ec4899"/>
+    <text class="wan_title" x="916.0" y="605" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">评测指标</text>
+    <text x="916.0" y="624" text-anchor="middle" font-size="10.5" fill="#7b88a3">Recall@K · MRR</text>
+    <circle class="wan_badge" cx="968" cy="582" r="10"/>
+    <text class="wan_badgetx" x="968" y="582" dy="3.2" text-anchor="middle">研</text>
+  </g>
+  <g class="wan_node" data-key="label" data-name="人工标注">
+    <rect class="wan_box" x="980" y="580" width="108" height="58" rx="10" stroke="rgba(236,72,153,0.5)"/>
+    <rect class="wan_strip" x="983.5" y="592" width="4" height="34" rx="2" fill="#ec4899"/>
+    <text class="wan_title" x="1034.0" y="605" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">人工标注</text>
+    <text x="1034.0" y="624" text-anchor="middle" font-size="10.5" fill="#7b88a3">Badcase</text>
+  </g>
+  <g class="wan_node" data-key="feedback" data-name="知识回流">
+    <rect class="wan_box" x="1098" y="580" width="108" height="58" rx="10" stroke="rgba(236,72,153,0.5)"/>
+    <rect class="wan_strip" x="1101.5" y="592" width="4" height="34" rx="2" fill="#ec4899"/>
+    <text class="wan_title" x="1152.0" y="605" text-anchor="middle" font-size="13.5" font-weight="600" fill="#17233d">知识回流</text>
+    <text x="1152.0" y="624" text-anchor="middle" font-size="10.5" fill="#7b88a3">增量入库</text>
+  </g>
+</svg>
+      </div>
+      <div class="wan_tip">← 左右滑动查看完整架构图 →</div>
+      <div class="wan_legend">
+        <span><i class="wan_ln"></i>同步调用</span>
+        <span><i class="wan_ln wan_m"></i>问答主链路</span>
+        <span><i class="wan_ln wan_d"></i>异步 / 反馈</span>
+        <span><i class="wan_ln wan_l"></i>答复回环</span>
+        <span><b class="wan_rb">研</b>研究重点模块</span>
+        <span style="color:#a8771a;">橙色描边 = 链路播放中的当前模块</span>
+      </div>
+      <div class="wan_detail" id="wan_detail">
+        <button class="wan_close" id="wan_dclose">✕</button>
+        <h3 id="wan_dtitle">模块</h3>
+        <p id="wan_ddesc"></p>
+        <div class="wan_tech" id="wan_dtech"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. 链路 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">01</span>一条问句的完整旅程（11 步 + 闭环）</div>
+    <div class="wan_h2sub">与图上「播放问答链路」的高亮顺序一一对应，从用户敲下回车到答案回到屏幕。</div>
+    <div class="wan_steps">
+      <div class="wan_stepc"><div class="wan_num">01</div><div><h3>用户提问</h3><p>网页客服窗、微信小程序、电话 ASR 转写、App SDK 四个入口，统一成文本 + 会话 ID。</p></div></div>
+      <div class="wan_stepc"><div class="wan_num">02</div><div><h3>接入网关</h3><p>鉴权、限流、建立 WebSocket 长连接；按租户与渠道路由，<code>QPS</code> 超限直接排队。</p></div></div>
+      <div class="wan_stepc"><div class="wan_num">03</div><div><h3>意图识别</h3><p>判断是「查订单 / 退换货 / 产品咨询 / 投诉」，决定走知识问答、业务查询还是转人工。</p></div></div>
+      <div class="wan_stepc"><div class="wan_num">04</div><div><h3>查询改写</h3><p>结合对话历史补全指代（「它」→「X100 耳机」），做同义扩展与 HyDE 假设答案。</p></div></div>
+      <div class="wan_stepc"><div class="wan_num">05</div><div><h3>向量化</h3><p>用 Embedding 模型把问句编码成 768 / 1024 维向量，供向量库做近邻检索。</p></div></div>
+      <div class="wan_stepc"><div class="wan_num">06</div><div><h3>混合检索</h3><p>BM25 关键词召回 + ANN 向量召回双路并行，用 RRF 融合排序，兼顾术语精确与语义相近。</p></div></div>
+      <div class="wan_stepc"><div class="wan_num">07</div><div><h3>重排 Rerank</h3><p>Cross-Encoder 对 Top-50 候选逐条打分精排，取 Top-5，显著提升上下文纯度。</p></div></div>
+      <div class="wan_stepc"><div class="wan_num">08</div><div><h3>上下文拼接</h3><p>Top-K 片段去重、截断到模型窗口内，附上来源编号，供答案标注引用。</p></div></div>
+      <div class="wan_stepc"><div class="wan_num">09</div><div><h3>Prompt 组装</h3><p>系统指令 + 会话历史 + 检索证据 + 输出格式约束（JSON / 引用编号 / 拒答话术）。</p></div></div>
+      <div class="wan_stepc"><div class="wan_num">10</div><div><h3>大模型生成</h3><p>流式输出首字更快；约束「只用证据作答」，证据不足时输出「暂未查到」。</p></div></div>
+      <div class="wan_stepc"><div class="wan_num">11</div><div><h3>后处理与回环</h3><p>敏感词过滤、置信度低于阈值转人工、附引用链接；答复回到用户，日志进运营闭环。</p></div></div>
+      <div class="wan_stepc" style="border-color:#f6d9a8;background:#fffdf7;"><div class="wan_num" style="background:#fdf1dc;color:#a8610a;">↺</div><div><h3>闭环：越用越准</h3><p>人工标注的 Badcase 与新政策文档经「知识回流」重新分块入库，下一轮检索立即生效。</p></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 3. 科研方向 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">02</span>六个可切入的科研方向</div>
+    <div class="wan_h2sub">每张卡按「研究问题 → 可行方法 → 评价指标」组织，对应图上带「研」标记的模块。</div>
+    <div class="wan_res">
+      <div class="wan_rcard">
+        <h3>混合检索与查询改写 <span class="wan_qm">研</span></h3>
+        <dl>
+          <dt>研究问题</dt><dd>BM25 与向量召回的权重怎么定？短问句、口语化提问召回不准。</dd>
+          <dt>可行方法</dt><dd>RRF 融合、SPLADE 学习型稀疏检索、HyDE、多查询扩展。</dd>
+          <dt>评价指标</dt><dd><b>Recall@10 / nDCG@10</b></dd>
+        </dl>
+      </div>
+      <div class="wan_rcard">
+        <h3>小样本意图识别 <span class="wan_qm">研</span></h3>
+        <dl>
+          <dt>研究问题</dt><dd>新业务意图只有几十条标注，冷启动效果差、标注成本高。</dd>
+          <dt>可行方法</dt><dd>提示学习、对比学习、主动学习挑选高价值样本。</dd>
+          <dt>评价指标</dt><dd><b>Macro-F1 / 标注成本</b></dd>
+        </dl>
+      </div>
+      <div class="wan_rcard">
+        <h3>多轮对话状态跟踪</h3>
+        <dl>
+          <dt>研究问题</dt><dd>指代、省略与话题漂移导致检索跑偏（「那退款呢？」）。</dd>
+          <dt>可行方法</dt><dd>DST 状态槽、对话图谱、长历史记忆压缩。</dd>
+          <dt>评价指标</dt><dd><b>DST 准确率 / 任务完成率</b></dd>
+        </dl>
+      </div>
+      <div class="wan_rcard">
+        <h3>知识图谱融合 <span class="wan_qm">研</span></h3>
+        <dl>
+          <dt>研究问题</dt><dd>结构化知识（型号、参数、政策条款）难以被向量检索覆盖。</dd>
+          <dt>可行方法</dt><dd>实体链接 + 子图检索、GraphRAG、模板化查询生成。</dd>
+          <dt>评价指标</dt><dd><b>多跳问答准确率</b></dd>
+        </dl>
+      </div>
+      <div class="wan_rcard">
+        <h3>幻觉抑制与可解释 <span class="wan_qm">研</span></h3>
+        <dl>
+          <dt>研究问题</dt><dd>模型编造政策与价格，答错比不答更伤信任。</dd>
+          <dt>可行方法</dt><dd>引用溯源、置信度校准、证据不足拒答策略。</dd>
+          <dt>评价指标</dt><dd><b>Faithfulness / 幻觉率</b></dd>
+        </dl>
+      </div>
+      <div class="wan_rcard">
+        <h3>评测基准与在线 A/B <span class="wan_qm">研</span></h3>
+        <dl>
+          <dt>研究问题</dt><dd>离线指标涨了，线上满意度却没涨。</dd>
+          <dt>可行方法</dt><dd>人工评测集 + 线上分流实验 + Badcase 回流。</dd>
+          <dt>评价指标</dt><dd><b>解决率 / CSAT</b></dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4. 指标 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">03</span>三层评测指标</div>
+    <div class="wan_h2sub">检索层看「找没找对」，生成层看「说得对不对」，业务层看「用户满不满意」。</div>
+    <div class="wan_tblwrap">
+      <table>
+        <tr><th style="width:120px;">层次</th><th style="width:210px;">指标</th><th>含义</th></tr>
+        <tr><td>检索层</td><td><code>Recall@K</code></td><td>前 K 个片段里是否包含正确证据，衡量召回是否够</td></tr>
+        <tr><td>检索层</td><td><code>MRR / nDCG@K</code></td><td>正确证据排得靠不靠前，衡量排序质量</td></tr>
+        <tr><td>生成层</td><td><code>Faithfulness</code></td><td>答案的每个论断是否都能在检索证据里找到依据</td></tr>
+        <tr><td>生成层</td><td><code>幻觉率</code></td><td>无依据陈述占比，通常靠人工或强模型评审统计</td></tr>
+        <tr><td>生成层</td><td><code>引用准确率</code></td><td>标注的来源链接是否真的支撑该句答案</td></tr>
+        <tr><td>业务层</td><td><code>首响时延 P95</code></td><td>从用户发送到首字返回，流式输出能把体感压到 1s 内</td></tr>
+        <tr><td>业务层</td><td><code>自助解决率</code></td><td>未转人工且用户未追问即结束的会话占比</td></tr>
+        <tr><td>业务层</td><td><code>转人工率 / CSAT</code></td><td>转人工比例越低越好；CSAT 是会话结束后的满意度评分</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 5. SVG 讲解 ============ -->
+  <section>
+    <div class="wan_h2"><span class="wan_no">04</span>为什么架构图用 SVG 画</div>
+    <div class="wan_h2sub">上面那张图是纯手写 SVG，不是截图也不是 Canvas。它和 18-2 的 Canvas 图正好可以对照着看。</div>
+    <div class="wan_grid2" style="margin-bottom:14px;">
+      <div class="wan_pit" style="border-left-color:#2563eb;">
+        <h3 style="color:#1d4ed8;"><span class="wan_pn" style="color:#2563eb;">01</span>矢量：放大不糊</h3>
+        <p>SVG 存的是坐标与形状，投影到 4K 屏、打印成 A4、插进论文 PDF 都是同一份清晰度；Canvas 存的是像素，放大就糊。</p>
+      </div>
+      <div class="wan_pit" style="border-left-color:#2563eb;">
+        <h3 style="color:#1d4ed8;"><span class="wan_pn" style="color:#2563eb;">02</span>文本可选可检索</h3>
+        <p>图里的文字是真文字，可以选中复制、被搜索引擎索引、被读屏软件朗读，这对无障碍与文档检索很关键。</p>
+      </div>
+      <div class="wan_pit" style="border-left-color:#2563eb;">
+        <h3 style="color:#1d4ed8;"><span class="wan_pn" style="color:#2563eb;">03</span>可版本管理</h3>
+        <p>SVG 是文本，git diff 能看出「改了哪个模块的名字」，论文投稿时还能用 Illustrator / Inkscape 再编辑。</p>
+      </div>
+      <div class="wan_pit" style="border-left-color:#2563eb;">
+        <h3 style="color:#1d4ed8;"><span class="wan_pn" style="color:#2563eb;">04</span>能像 DOM 一样被控制</h3>
+        <p>内联 SVG 的每个 <code>&lt;g&gt;</code> 都是节点，可以 CSS 悬停、JS 点击、批量高亮——本页的交互就是这么做的。</p>
+      </div>
+    </div>
+
+    <pre class="wan_code"><span class="wan_c">&lt;!-- 一张能交互的架构图，最小骨架大概是这样 --&gt;</span>
+&lt;<span class="wan_t">svg</span> viewBox=<span class="wan_s">"0 0 1240 780"</span> role=<span class="wan_s">"img"</span> aria-label=<span class="wan_s">"智能客服系统架构图"</span>&gt;
+  &lt;<span class="wan_t">defs</span>&gt;
+    <span class="wan_c">&lt;!-- 箭头：refX 对准箭头尖，否则线会穿过箭头 --&gt;</span>
+    &lt;<span class="wan_t">marker</span> id=<span class="wan_s">"wan_arw"</span> viewBox=<span class="wan_s">"0 0 10 10"</span> refX=<span class="wan_s">"9"</span> refY=<span class="wan_s">"5"</span>
+            markerWidth=<span class="wan_s">"6"</span> markerHeight=<span class="wan_s">"6"</span> orient=<span class="wan_s">"auto"</span>&gt;
+      &lt;<span class="wan_t">path</span> d=<span class="wan_s">"M0 0 L10 5 L0 10 Z"</span> fill=<span class="wan_s">"#93a5c4"</span>/&gt;
+    &lt;/<span class="wan_t">marker</span>&gt;
+  &lt;/<span class="wan_t">defs</span>&gt;
+
+  <span class="wan_c">&lt;!-- 一个模块 = 一个 g，data-key 给 JS 用 --&gt;</span>
+  &lt;<span class="wan_t">g</span> class=<span class="wan_s">"wan_node"</span> data-key=<span class="wan_s">"hybrid"</span>&gt;
+    &lt;<span class="wan_t">rect</span> x=<span class="wan_s">"654"</span> y=<span class="wan_s">"220"</span> width=<span class="wan_s">"220"</span> height=<span class="wan_s">"58"</span> rx=<span class="wan_s">"10"</span>/&gt;
+    &lt;<span class="wan_t">text</span> x=<span class="wan_s">"764"</span> y=<span class="wan_s">"244"</span>&gt;混合检索&lt;/<span class="wan_t">text</span>&gt;
+  &lt;/<span class="wan_t">g</span>&gt;
+
+  <span class="wan_c">&lt;!-- 连线：marker-end 挂箭头 --&gt;</span>
+  &lt;<span class="wan_t">path</span> class=<span class="wan_s">"wan_edge"</span> d=<span class="wan_s">"M764 142 V 152"</span> marker-end=<span class="wan_s">"url(#wan_arw)"</span>/&gt;
+&lt;/<span class="wan_t">svg</span>&gt;</pre>
+
+    <div class="wan_h2sub" style="margin-top:18px;">五个容易踩的细节</div>
+    <div class="wan_grid2">
+      <div class="wan_pit">
+        <h3><span class="wan_pn">01</span>viewBox 才是坐标系</h3>
+        <p><code>width/height</code> 只决定显示多大，<code>viewBox</code> 决定内部坐标范围。先定 viewBox（如 1240×780）再摆元素，才能等比缩放不变形。</p>
+      </div>
+      <div class="wan_pit">
+        <h3><span class="wan_pn">02</span>箭头不对齐 = refX 没调</h3>
+        <p>marker 默认以起点为原点，箭头尖会「缩」在路径终点前或穿出去。把 <code>refX</code> 设为 9（10 宽箭头的尖端），端点才刚好贴住。</p>
+      </div>
+      <div class="wan_pit">
+        <h3><span class="wan_pn">03</span>text 不会自动换行</h3>
+        <p>SVG 的 <code>&lt;text&gt;</code> 没有自动折行，长文本要手动拆成 <code>&lt;tspan x="…" dy="…"&gt;</code>，所以架构图里每个模块只放标题 + 一行副标题。</p>
+      </div>
+      <div class="wan_pit">
+        <h3><span class="wan_pn">04</span>外链 SVG 控制不了</h3>
+        <p><code>&lt;img src="x.svg"&gt;</code> 是图片，CSS 和 JS 都进不去。要做悬停、点击高亮，必须把 SVG <strong>内联</strong>写在 HTML 里。</p>
+      </div>
+      <div class="wan_pit">
+        <h3><span class="wan_pn">05</span>字体要显式声明</h3>
+        <p>内联 SVG 会继承页面字体；但如果把图单独导出成 .svg 文件交给别人，要在 <code>&lt;style&gt;</code> 里写死 font-family，否则字体全变默认宋体。</p>
+      </div>
+      <div class="wan_pit" style="border-left-color:#10b981;">
+        <h3 style="color:#0b7d5c;"><span class="wan_pn" style="color:#10b981;">✓</span>和 Canvas 怎么选</h3>
+        <p>元素固定、要可选中可交互 → SVG（架构图、流程图、图标）；成千上万元素、逐帧像素动画 → Canvas（18-1 的粒子、18-2 的流动数据包）。</p>
+      </div>
+    </div>
+    <div class="wan_note">本图共 7 层 26 个模块、29 条连线，全部由手写 SVG 构成，没有引用任何图片文件；点击任一模块可看它的职责与常见技术选型，橙色「研」标记对应上面六个科研方向。</div>
+  </section>
+
+  <footer>
+    <div>高级网页设计 I · 18-3 SVG 智能客服架构图 · 万逸泽</div>
+    <div><a href="18-2.html">← 上一篇：18-2 电商架构图</a>&nbsp;&nbsp;<a href="index.html">← 返回首页</a></div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var wan_id = function (s) { return document.getElementById(s); };
+  var wan_svg = document.querySelector('.wan_svg');
+
+  var wan_info = {
+    web:   { n: '网页客服窗口', l: '① 用户接入层', c: '#3b82f6', d: 'PC / H5 页面右下角的客服气泡，支持文字、图片、订单卡片消息，是最主要的咨询入口。', t: 'WebSocket · SSE 流式渲染' },
+    wx:    { n: '微信 / 小程序', l: '① 用户接入层', c: '#3b82f6', d: '公众号菜单与小程序内的客服入口，可复用微信身份静默登录，减少重复描述订单信息。', t: '微信 JS-SDK · 小程序客服消息' },
+    phone: { n: '电话语音 ASR/TTS', l: '① 用户接入层', c: '#3b82f6', d: '电话渠道先用 ASR 把语音转成文字走同一套问答链路，再把答案用 TTS 播报回去，适合中老年用户。', t: 'ASR · TTS · 打断检测' },
+    sdk:   { n: 'App / 企业微信 SDK', l: '① 用户接入层', c: '#3b82f6', d: '把客服以 SDK 形式嵌进自有 App 或企业微信工作台，可携带用户画像与订单上下文一起进入会话。', t: 'JS / iOS / Android SDK' },
+
+    gw:      { n: '接入网关', l: '② 接入与会话层', c: '#6366f1', d: '所有渠道的统一入口：鉴权、限流、灰度路由、建立长连接。大促时在这里排队削峰，保护后面的模型与检索服务。', t: 'Nginx · WebSocket · 令牌桶限流' },
+    session: { n: '会话管理', l: '② 接入与会话层', c: '#6366f1', d: '维护每个会话的上下文窗口、多轮状态与超时策略，决定「带多少历史进 Prompt」，直接影响成本与准确率。', t: 'Redis · 会话上下文压缩' },
+    human:   { n: '人工坐席', l: '② 接入与会话层', c: '#6366f1', d: '机器人答不了或用户主动要求时转人工，转接时把意图、槽位、已检索证据一并交给坐席，避免用户重复描述。', t: '工单系统 · 坐席路由' },
+
+    intent: { n: '意图识别', l: '③ 语义理解层', c: '#8b5cf6', d: '把问句分类到业务意图（查订单、退换货、产品咨询、投诉），决定走知识问答、订单查询接口还是直接转人工。', t: '文本分类 · 提示学习 · 小样本' },
+    slot:   { n: '槽位抽取', l: '③ 语义理解层', c: '#8b5cf6', d: '从问句里抽出订单号、商品型号、时间等参数，供后续调用业务接口或缩小检索范围。', t: 'NER · 正则兜底 · LLM 抽取' },
+    dst:    { n: '对话状态跟踪', l: '③ 语义理解层', c: '#8b5cf6', d: '记录多轮对话的状态与已填槽位，解决「它」「那退款呢」这类指代与省略，是长对话不跑偏的关键。', t: 'DST · 对话图谱 · 指代消解' },
+
+    rewrite: { n: '查询改写', l: '④ 知识检索层（RAG）', c: '#0ea5e9', d: '结合历史补全指代、做同义扩展，也可用 HyDE 先生成一个假设答案再拿去检索，显著提升口语化提问的召回。', t: 'HyDE · 同义扩展 · 多查询' },
+    embed:   { n: '向量化 Embedding', l: '④ 知识检索层（RAG）', c: '#0ea5e9', d: '把问句编码成稠密向量（768 / 1024 维），与离线入库的知识块向量在同一空间里比较相似度。', t: 'BGE · text-embedding-3' },
+    hybrid:  { n: '混合检索', l: '④ 知识检索层（RAG）', c: '#0ea5e9', d: 'BM25 关键词召回擅长精确术语与型号，ANN 向量召回擅长语义相近，两路结果用 RRF 融合，比单路更稳。', t: 'BM25 · HNSW · RRF 融合' },
+    rerank:  { n: '重排 Rerank', l: '④ 知识检索层（RAG）', c: '#0ea5e9', d: '用 Cross-Encoder 对「问句-片段」逐对打分精排，把 Top-50 收窄到 Top-5，是提升上下文纯度最划算的一步。', t: 'Cross-Encoder · bge-reranker' },
+    topk:    { n: 'Top-K 上下文', l: '④ 知识检索层（RAG）', c: '#0ea5e9', d: '去重、截断到模型窗口内，并保留来源编号；片段质量与顺序直接决定答案的忠实度。', t: '去重 · 窗口裁剪 · 来源标注' },
+
+    prompt: { n: 'Prompt 组装', l: '⑤ 生成与答复层', c: '#10b981', d: '系统指令 + 会话历史 + 检索证据 + 输出约束（引用编号、JSON 结构、拒答话术）拼成最终提示词。', t: '提示模板 · Few-shot · 结构化输出' },
+    llm:    { n: '大模型生成', l: '⑤ 生成与答复层', c: '#10b981', d: '基于证据生成答案，流式返回首字以压低体感时延；温度调低、约束「不得超出证据范围」。', t: 'LLM · 流式输出 · 低温度' },
+    post:   { n: '后处理', l: '⑤ 生成与答复层', c: '#10b981', d: '敏感词与合规过滤、引用链接回填、置信度低则改写话术或转人工；这一层决定「答错」的兜底体验。', t: '敏感词库 · 置信度阈值 · 转人工' },
+
+    kb:    { n: '多源知识', l: '⑥ 知识与数据底座', c: '#f59e0b', d: '知识来源包括产品文档、FAQ、历史工单、售后政策，以及结构化的商品参数与知识图谱。', t: '文档 · FAQ · 工单 · 图谱' },
+    parse: { n: '解析清洗', l: '⑥ 知识与数据底座', c: '#f59e0b', d: 'PDF / Word / HTML / 扫描件统一解析成纯文本，去页眉页脚、修错字、识别表格，脏数据会直接拖垮检索质量。', t: 'PDF 解析 · OCR · 表格抽取' },
+    chunk: { n: '分块 Chunking', l: '⑥ 知识与数据底座', c: '#f59e0b', d: '按语义边界切块并保留标题层级与少量重叠，块太大稀释语义、太小丢失上下文，是 RAG 最常调的超参。', t: '语义分块 · 标题感知 · 重叠窗口' },
+    vdb:   { n: '向量数据库', l: '⑥ 知识与数据底座', c: '#f59e0b', d: '存储全部知识块向量并提供近似最近邻检索，支持增量更新与按租户/品类过滤，是检索层的底座。', t: 'Milvus · FAISS · pgvector' },
+
+    log:      { n: '会话日志', l: '⑦ 运营与评测闭环', c: '#ec4899', d: '全量记录问句、检索片段、答案、耗时与用户反馈，是评测与训练数据的原始来源。', t: '埋点 · 日志仓库' },
+    eval:     { n: '评测指标', l: '⑦ 运营与评测闭环', c: '#ec4899', d: '离线跑评测集算 Recall@K、Faithfulness，线上看解决率与 CSAT，两者必须同时盯。', t: '评测集 · LLM 评审 · A/B' },
+    label:    { n: '人工标注', l: '⑦ 运营与评测闭环', c: '#ec4899', d: '从 Badcase 里抽样标注正确意图、正确证据与理想答案，形成可持续迭代的训练与评测数据。', t: '标注平台 · 质检抽检' },
+    feedback: { n: '知识回流', l: '⑦ 运营与评测闭环', c: '#ec4899', d: '把坐席沉淀的新话术、新政策文档重新走解析-分块-入库流程，让知识库随业务一起更新。', t: '增量索引 · 版本回滚' }
+  };
+
+  /* ---------- 点击节点 ---------- */
+  function wan_open(key) {
+    var d = wan_info[key];
+    if (!d) return;
+    wan_id('wan_dtitle').innerHTML = d.n + ' <span class="wan_layer" style="background:' + d.c + ';">' + d.l + '</span>';
+    wan_id('wan_ddesc').textContent = d.d;
+    wan_id('wan_dtech').textContent = '常见技术：' + d.t;
+    wan_id('wan_detail').classList.add('wan_show');
+    wan_id('wan_caption').textContent = '已选中：' + d.n;
+  }
+
+  wan_svg.addEventListener('click', function (e) {
+    var g = e.target.closest ? e.target.closest('.wan_node') : null;
+    if (g) wan_open(g.getAttribute('data-key'));
+  });
+
+  wan_id('wan_dclose').addEventListener('click', function () {
+    wan_id('wan_detail').classList.remove('wan_show');
+    wan_id('wan_caption').textContent = '点击图中模块查看说明';
+  });
+
+  /* ---------- 链路播放 ---------- */
+  var wan_steps = [
+    { k: 'web',    t: '① 用户提问：网页 / 小程序 / 电话统一接入' },
+    { k: 'gw',     t: '② 接入网关：鉴权、限流、建立会话' },
+    { k: 'intent', t: '③ 意图识别：判断这是哪一类问题' },
+    { k: 'rewrite', t: '④ 查询改写：补全指代、扩展同义词' },
+    { k: 'embed',  t: '⑤ 向量化：问句编码成向量' },
+    { k: 'hybrid', t: '⑥ 混合检索：BM25 + ANN 双路召回' },
+    { k: 'rerank', t: '⑦ 重排：Top-50 精排到 Top-5' },
+    { k: 'topk',   t: '⑧ 上下文拼接：去重并标注来源' },
+    { k: 'prompt', t: '⑨ Prompt 组装：指令 + 历史 + 证据' },
+    { k: 'llm',    t: '⑩ 大模型生成：基于证据流式作答' },
+    { k: 'post',   t: '⑪ 后处理：合规过滤、引用回填、必要时转人工' }
+  ];
+  var wan_i = 0, wan_timer = null;
+
+  function wan_clearOn() {
+    var arr = wan_svg.querySelectorAll('.wan_node.wan_on');
+    for (var i = 0; i < arr.length; i++) arr[i].classList.remove('wan_on');
+  }
+
+  function wan_stop(keepCaption) {
+    if (wan_timer) { clearInterval(wan_timer); wan_timer = null; }
+    wan_svg.classList.remove('wan_playing');
+    wan_id('wan_play').disabled = false;
+    wan_i = 0;
+    if (!keepCaption) wan_id('wan_caption').textContent = '点击图中模块查看说明';
+  }
+
+  wan_id('wan_play').addEventListener('click', function () {
+    wan_stop(true);
+    wan_svg.classList.add('wan_playing');
+    this.disabled = true;
+    var btn = this;
+    wan_i = 0;
+    function step() {
+      if (wan_i >= wan_steps.length) {
+        wan_clearOn();
+        wan_svg.classList.remove('wan_playing');
+        btn.disabled = false;
+        wan_id('wan_caption').textContent = '✔ 一条问答链路走完，答案回到用户，日志进入运营闭环';
+        wan_timer = null;
+        return;
+      }
+      wan_clearOn();
+      var st = wan_steps[wan_i];
+      var g = wan_svg.querySelector('.wan_node[data-key="' + st.k + '"]');
+      if (g) g.classList.add('wan_on');
+      wan_id('wan_caption').textContent = st.t;
+      wan_i++;
+    }
+    step();
+    wan_timer = setInterval(step, 900);
+  });
+
+  wan_id('wan_reset').addEventListener('click', function () {
+    wan_stop(false);
+    wan_clearOn();
+    wan_id('wan_detail').classList.remove('wan_show');
+  });
+})();
+</script>
+</body>
+</html>
