@@ -22,6 +22,7 @@
 | **18-3** | SVG 知识库智能客服系统架构图（科研方向） | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/18-3.html) |
 | **18-4** | ECharts 箱线图 · 1950 年以来各国收入分布 | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/18-4.html) |
 | **18-5** | ECharts 关系图 · 画在笛卡尔坐标系上 | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/18-5.html) |
+| **18-8** | 数据大屏 · 三列布局 · 中国地图实时监控 | [▶ 打开网页](https://kongcheng-kk.github.io/wanyize/18-8.html) |
 
 > **为什么要用上面的链接？**
 > GitHub 的代码页面（点进 `.html` 文件看到的那一页）只会把 HTML **以源码形式**展示出来，
@@ -44,5 +45,6 @@
 - `18-3.html` —— 内联 SVG 绘制的知识库智能客服系统架构图：七层 26 模块（接入 / 会话 / 语义理解 / RAG 检索 / 生成 / 知识底座 / 运营评测），支持点击模块看职责、播放 11 步问答链路，并附六个科研方向与三层评测指标
 - `18-4.html` —— ECharts 箱线图：dataset 的 filter / aggregate / sort 三级变换，把 1540 行原始表算成 19 个国家的收入分位数，附原始散点开关与 dataZoom；ECharts 5.5.1、聚合插件与示例数据都放在 `cdn/echarts/`，离线可用
 - `18-5.html` —— ECharts 关系图：`layout:'none'` + `coordinateSystem:'cartesian2d'` 把周一到周日 7 个节点钉在类目轴与数值轴上，箭头表示流向，可重新生成随机数据、切换数值标签
+- `18-8.html` —— ECharts 数据大屏（全国电商实时监控）：三列布局，中列上方为中国地图（省级填色 + 城市散点 + 上海发出的飞线），另有 KPI、TOP8 条形、品类环图、24 小时趋势、渠道玫瑰、履约仪表与实时成交列表；地图数据用 DataV.GeoAtlas 行政区划（含台湾省、南海诸岛），仅用于教学演示
 
 每个页面都是自包含的单文件，CSS 与 JavaScript 全部内嵌；图片放在 `image/`，图标字体与库放在 `cdn/`，均以相对路径引用。`cdn/echarts/` 内含 ECharts 主库、聚合变换插件与示例数据（json + 供 file:// 兜底的 js 副本）。

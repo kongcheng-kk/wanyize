@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  文件：18-8.html
+  作者：万逸泽（学号 24001010412）
+  建立时间：2026-11-05 14:56
+  使用的大模型：deepseek-v4.1-flash
+  提示词：
+    先实现18.8.html，实现three.js或echarts的数据大屏，大屏要求：
+    3列，中间上面是某种地理信息的图，cdn文件下载到cdn目录下
+  说明：ECharts 数据大屏（全国电商实时监控），三列布局，中列上方为
+        中国地图（省级填色 + 城市散点 + 飞线），含 6 个图表与实时列表。
+        地图数据：DataV.GeoAtlas 行政区划（含台湾省、南海诸岛），
+        仅用于教学演示，边界以国家发布的 standard 地图为准。
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18-8 数据大屏 · 全国电商实时监控</title>
+<style>
+  :root {
+    --wan_bg: #050a14;
+    --wan_panel: #0a1526;
+    --wan_line: rgba(56, 189, 248, .18);
+    --wan_cyan: #38bdf8;
+    --wan_ink: #e6f1ff;
+    --wan_sub: #7f9cbd;
+    --wan_mono: Consolas, "JetBrains Mono", monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(56, 189, 248, .16), transparent 70%),
+      radial-gradient(900px 500px at 85% 110%, rgba(34, 211, 238, .10), transparent 70%),
+      var(--wan_bg);
+    color: var(--wan_ink);
+    overflow: hidden;
+  }
+
+  .wan_screen {
+    height: 100vh;
+    display: grid;
+    grid-template-rows: 64px 1fr;
+    padding: 0 16px 14px;
+    gap: 10px;
+  }
+
+  /* ---------- 顶栏 ---------- */
+  .wan_head {
+    display: flex; align-items: center; gap: 16px;
+    border-bottom: 1px solid var(--wan_line);
+    position: relative;
+  }
+  .wan_head::after {
+    content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%);
+    width: 320px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--wan_cyan), transparent);
+  }
+  .wan_head h1 {
+    font-size: 22px; font-weight: 700; letter-spacing: 3px;
+    background: linear-gradient(180deg, #eaf7ff, #7dd3fc);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .wan_head .wan_sub { font-size: 12px; color: var(--wan_sub); letter-spacing: 1px; }
+  .wan_head .wan_sp { flex: 1; }
+  .wan_clock { font-family: var(--wan_mono); font-size: 13px; color: var(--wan_sub); }
+  .wan_live {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; color: #34d399; font-family: var(--wan_mono);
+  }
+  .wan_live i {
+    width: 7px; height: 7px; border-radius: 50%; background: #34d399;
+    box-shadow: 0 0 8px #34d399; animation: wan_pulse 1.6s infinite;
+  }
+  @keyframes wan_pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+  /* ---------- 三列 ---------- */
+  .wan_grid3 {
+    display: grid;
+    grid-template-columns: 330px minmax(0, 1fr) 330px;
+    gap: 12px;
+    min-height: 0;
+  }
+  .wan_col { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+
+  .wan_panel {
+    position: relative;
+    flex: 1;
+    background: linear-gradient(180deg, rgba(12, 26, 45, .92), rgba(8, 17, 32, .92));
+    border: 1px solid var(--wan_line);
+    border-radius: 10px;
+    padding: 10px 12px 8px;
+    display: flex; flex-direction: column; min-height: 0;
+    box-shadow: inset 0 0 30px rgba(56, 189, 248, .05);
+  }
+  .wan_panel::before, .wan_panel::after {
+    content: ""; position: absolute; width: 12px; height: 12px;
+    border-color: var(--wan_cyan); border-style: solid; opacity: .7;
+  }
+  .wan_panel::before { left: -1px; top: -1px; border-width: 2px 0 0 2px; border-top-left-radius: 10px; }
+  .wan_panel::after { right: -1px; bottom: -1px; border-width: 0 2px 2px 0; border-bottom-right-radius: 10px; }
+
+  .wan_panel h3 {
+    font-size: 13.5px; font-weight: 600; color: #bfe4ff;
+    letter-spacing: 1px; padding-left: 9px; position: relative;
+    margin-bottom: 6px; flex: none;
+  }
+  .wan_panel h3::before {
+    content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 12px; background: var(--wan_cyan); border-radius: 2px;
+    box-shadow: 0 0 8px var(--wan_cyan);
+  }
+  .wan_panel h3 small { color: var(--wan_sub); font-weight: 400; font-size: 11.5px; margin-left: 6px; }
+
+  .wan_chart { flex: 1; min-height: 96px; width: 100%; }
+
+  /* ---------- KPI ---------- */
+  .wan_kpi { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 12px; flex: none; }
+  .wan_kpi .wan_k {
+    background: linear-gradient(135deg, rgba(56, 189, 248, .12), rgba(56, 189, 248, .02));
+    border: 1px solid rgba(56, 189, 248, .16); border-radius: 8px; padding: 8px 10px;
+  }
+  .wan_kpi .wan_k span { display: block; font-size: 11.5px; color: var(--wan_sub); letter-spacing: .5px; }
+  .wan_kpi .wan_k b {
+    font-family: var(--wan_mono); font-size: 21px; font-weight: 700; color: #eaf7ff;
+    letter-spacing: .5px; line-height: 1.35;
+  }
+  .wan_kpi .wan_k b small { font-size: 11px; color: var(--wan-sub, #7f9cbd); margin-left: 3px; }
+  .wan_kpi .wan_k i {
+    font-style: normal; font-size: 11px; font-family: var(--wan_mono);
+  }
+  .wan_up { color: #34d399; }
+  .wan_down { color: #f87171; }
+
+  /* ---------- 地图脚注 ---------- */
+  .wan_mapnote {
+    flex: none; font-size: 10.5px; color: rgba(127, 156, 189, .75);
+    text-align: right; padding-top: 2px; letter-spacing: .3px;
+  }
+
+  /* ---------- 实时列表 ---------- */
+  .wan_feed { flex: 1; overflow: hidden; list-style: none; font-size: 12px; }
+  .wan_feed li {
+    display: flex; align-items: center; gap: 8px; padding: 6px 2px;
+    border-bottom: 1px dashed rgba(56, 189, 248, .1);
+    color: #c3d8ee; animation: wan_in .45s ease;
+  }
+  .wan_feed li .wan_t { font-family: var(--wan_mono); color: var(--wan_sub); font-size: 11px; }
+  .wan_feed li .wan_p { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wan_feed li .wan_m { font-family: var(--wan_mono); color: #7dd3fc; }
+  @keyframes wan_in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+  @media (max-width: 1180px) {
+    body { overflow: auto; }
+    .wan_screen { height: auto; }
+    .wan_grid3 { grid-template-columns: 1fr; }
+    .wan_col { min-height: auto; }
+    .wan_chart { height: 280px; }
+    .wan_map { height: 420px; }
+  }
+</style>
+</head>
+<body>
+<div class="wan_screen">
+
+  <header class="wan_head">
+    <div>
+      <h1>全国电商实时监控中心</h1>
+      <div class="wan_sub">E-COMMERCE REALTIME DASHBOARD · 教学演示数据</div>
+    </div>
+    <span class="wan_sp"></span>
+    <span class="wan_live"><i></i>LIVE</span>
+    <span class="wan_clock" id="wan_clock">--:--:--</span>
+  </header>
+
+  <main class="wan_grid3">
+
+    <!-- ============ 左列 ============ -->
+    <aside class="wan_col">
+      <div class="wan_panel wan_kpi">
+        <div class="wan_k"><span>今日 GMV</span><b id="wan_kpi_gmv">2.84<small>亿</small></b><i class="wan_up" id="wan_kpi_gmv_d">▲ 12.4%</i></div>
+        <div class="wan_k"><span>订单量</span><b id="wan_kpi_order">18.6<small>万</small></b><i class="wan_up" id="wan_kpi_order_d">▲ 8.1%</i></div>
+        <div class="wan_k"><span>活跃用户</span><b id="wan_kpi_user">96.2<small>万</small></b><i class="wan_down" id="wan_kpi_user_d">▼ 2.3%</i></div>
+        <div class="wan_k"><span>支付转化</span><b id="wan_kpi_cvr">4.72<small>%</small></b><i class="wan_up" id="wan_kpi_cvr_d">▲ 0.6%</i></div>
+      </div>
+
+      <div class="wan_panel">
+        <h3>区域销售 TOP 8 <small>单位：万元</small></h3>
+        <div class="wan_chart" id="wan_bar"></div>
+      </div>
+
+      <div class="wan_panel">
+        <h3>品类占比 <small>按 GMV</small></h3>
+        <div class="wan_chart" id="wan_pie"></div>
+      </div>
+    </aside>
+
+    <!-- ============ 中列 ============ -->
+    <section class="wan_col">
+      <div class="wan_panel" style="flex: 1.62;">
+        <h3>全国订单分布 <small>点击省份查看趋势</small></h3>
+        <div class="wan_chart" id="wan_map"></div>
+        <div class="wan_mapnote">地图数据：DataV.GeoAtlas 行政区划（含台湾省、南海诸岛）· 仅用于教学演示</div>
+      </div>
+
+      <div class="wan_panel" style="flex: 1;">
+        <h3 id="wan_trend_title">24 小时订单趋势 <small>全国</small></h3>
+        <div class="wan_chart" id="wan_trend"></div>
+      </div>
+    </section>
+
+    <!-- ============ 右列 ============ -->
+    <aside class="wan_col">
+      <div class="wan_panel" style="flex: 1;">
+        <h3>渠道构成</h3>
+        <div class="wan_chart" id="wan_rose"></div>
+      </div>
+
+      <div class="wan_panel" style="flex: .92;">
+        <h3>履约健康度 <small>发货及时率</small></h3>
+        <div class="wan_chart" id="wan_gauge"></div>
+      </div>
+
+      <div class="wan_panel" style="flex: 1.05;">
+        <h3>实时成交 <small>滚动更新</small></h3>
+        <ul class="wan_feed" id="wan_feed"></ul>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script src="cdn/echarts/echarts.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var wan_$ = function (id) { return document.getElementById(id); };
+
+  /* ---------------- 主题与公共配置 ---------------- */
+  var WAN_AXIS = '#5b7fa4';
+  var WAN_SPLIT = 'rgba(56,189,248,.08)';
+  var WAN_TEXT = '#c3d8ee';
+  var WAN_TIP = {
+    backgroundColor: 'rgba(6,15,28,.94)',
+    borderColor: 'rgba(56,189,248,.35)',
+    borderWidth: 1,
+    textStyle: { color: '#dceaf7', fontSize: 12 },
+    extraCssText: 'box-shadow:0 6px 24px rgba(0,0,0,.5);'
+  };
+
+  /* ---------------- 省份数据 ---------------- */
+  var wan_provinces = [
+    '北京市', '天津市', '河北省', '山西省', '内蒙古自治区', '辽宁省', '吉林省', '黑龙江省',
+    '上海市', '江苏省', '浙江省', '安徽省', '福建省', '江西省', '山东省', '河南省',
+    '湖北省', '湖南省', '广东省', '广西壮族自治区', '海南省', '重庆市', '四川省', '贵州省',
+    '云南省', '西藏自治区', '陕西省', '甘肃省', '青海省', '宁夏回族自治区', '新疆维吾尔自治区',
+    '台湾省', '香港特别行政区', '澳门特别行政区'
+  ];
+  var wan_base = {
+    '广东省': 980, '江苏省': 860, '浙江省': 820, '山东省': 640, '上海市': 610,
+    '北京市': 560, '四川省': 470, '河南省': 430, '湖北省': 390, '福建省': 370,
+    '湖南省': 330, '河北省': 310, '安徽省': 290, '陕西省': 240, '辽宁省': 220,
+    '江西省': 210, '重庆市': 200, '广西壮族自治区': 180, '云南省': 170, '山西省': 150,
+    '贵州省': 130, '天津市': 120, '黑龙江省': 110, '吉林省': 95, '内蒙古自治区': 90,
+    '新疆维吾尔自治区': 80, '甘肃省': 70, '海南省': 60, '台湾省': 150,
+    '宁夏回族自治区': 45, '青海省': 35, '西藏自治区': 22,
+    '香港特别行政区': 85, '澳门特别行政区': 30
+  };
+
+  function wan_provinceData(jitter) {
+    return wan_provinces.map(function (name) {
+      var v = wan_base[name] || 0;
+      if (jitter) v = Math.round(v * (0.9 + Math.random() * 0.2));
+      return { name: name, value: v };
+    });
+  }
+
+  /* 重点城市坐标（经度, 纬度） */
+  var wan_cities = [
+    { name: '北京', value: [116.40, 39.90, 560] },
+    { name: '上海', value: [121.47, 31.23, 610] },
+    { name: '广州', value: [113.26, 23.13, 980] },
+    { name: '深圳', value: [114.06, 22.55, 720] },
+    { name: '杭州', value: [120.16, 30.27, 540] },
+    { name: '成都', value: [104.07, 30.57, 470] },
+    { name: '武汉', value: [114.31, 30.52, 390] },
+    { name: '西安', value: [108.95, 34.27, 240] },
+    { name: '沈阳', value: [123.43, 41.80, 220] },
+    { name: '乌鲁木齐', value: [87.62, 43.82, 80] }
+  ];
+  var wan_flow = wan_cities.slice(1).map(function (c) {
+    return { coords: [[121.47, 31.23], c.value] };
+  });
+
+  /* ---------------- 图表实例 ---------------- */
+  var wan_charts = {};
+
+  function wan_initChart(id) {
+    var c = echarts.init(wan_$(id), null, { renderer: 'canvas' });
+    wan_charts[id] = c;
+    return c;
+  }
+
+  /* ---------------- 1. 地图 ---------------- */
+  function wan_drawMap() {
+    var c = wan_initChart('wan_map');
+    c.setOption({
+      tooltip: Object.assign({}, WAN_TIP, {
+        trigger: 'item',
+        formatter: function (p) {
+          if (!p.name) return '';
+          if (p.seriesType === 'effectScatter') return p.name + '：' + p.value[2] + ' 单';
+          if (p.seriesType === 'lines') return '流向 ' + p.data.toName;
+          return p.name + '<br/>订单 ' + (p.value || 0) + ' 单';
+        }
+      }),
+      visualMap: {
+        type: 'continuous',
+        min: 0, max: 1000,
+        left: 16, bottom: 14,
+        itemWidth: 92, itemHeight: 8,
+        calculable: false,
+        text: ['高', '低'],
+        textStyle: { color: WAN_AXIS, fontSize: 10 },
+        inRange: { color: ['#0b2c4a', '#125d86', '#1e9bc4', '#4fd1e6'] }
+      },
+      geo: {
+        map: 'china',
+        roam: true,
+        zoom: 1.36,
+        layoutCenter: ['50%', '50%'],
+        layoutSize: '100%',
+        itemStyle: {
+          areaColor: '#0b2239',
+          borderColor: 'rgba(56,189,248,.45)',
+          borderWidth: 1,
+          shadowColor: 'rgba(56,189,248,.35)',
+          shadowBlur: 16,
+          shadowOffsetY: 6
+        },
+        emphasis: {
+          itemStyle: { areaColor: '#174a63' },
+          label: { show: true, color: '#eaf7ff', fontSize: 11 }
+        },
+        select: { itemStyle: { areaColor: '#1b5e7a' }, label: { show: false } },
+        label: { show: false }
+      },
+      series: [
+        {
+          name: '订单量',
+          type: 'map',
+          geoIndex: 0,
+          data: wan_provinceData(false)
+        },
+        {
+          name: '重点城市',
+          type: 'effectScatter',
+          coordinateSystem: 'geo',
+          data: wan_cities,
+          symbolSize: function (val) { return Math.max(5, Math.min(14, val[2] / 70)); },
+          rippleEffect: { brushType: 'stroke', scale: 3.2, period: 3.4 },
+          itemStyle: { color: '#7dd3fc', shadowBlur: 10, shadowColor: '#38bdf8' },
+          label: { show: false },
+          zlevel: 2
+        },
+        {
+          name: '流向',
+          type: 'lines',
+          coordinateSystem: 'geo',
+          zlevel: 1,
+          effect: {
+            show: true, period: 4, trailLength: 0.32,
+            symbol: 'arrow', symbolSize: 5, color: '#7dd3fc'
+          },
+          lineStyle: {
+            color: 'rgba(56,189,248,.45)', width: 1, curveness: 0.22, opacity: .8
+          },
+          data: wan_flow
+        }
+      ]
+    });
+
+    c.on('click', function (p) {
+      if (p.componentType === 'series' && p.seriesType === 'map' && p.name) {
+        wan_trendTitle(p.name);
+        wan_drawTrend(p.name);
+      }
+    });
+  }
+
+  /* ---------------- 2. 区域 TOP8 ---------------- */
+  function wan_drawBar() {
+    var c = wan_initChart('wan_bar');
+    var top = wan_provinceData(false)
+      .sort(function (a, b) { return a.value - b.value; })
+      .slice(-8)
+      .map(function (d) { return { name: d.name.replace(/(省|市|自治区|特别行政区|维吾尔|壮族|回族)/g, ''), value: d.value }; });
+
+    c.setOption({
+      grid: { left: 58, right: 46, top: 8, bottom: 4, containLabel: false },
+      tooltip: Object.assign({}, WAN_TIP, { trigger: 'axis', axisPointer: { type: 'shadow' } }),
+      xAxis: { type: 'value', show: false, max: 1100 },
+      yAxis: {
+        type: 'category',
+        data: top.map(function (d) { return d.name; }),
+        axisLine: { show: false }, axisTick: { show: false },
+        axisLabel: { color: WAN_TEXT, fontSize: 11 }
+      },
+      series: [{
+        type: 'bar',
+        data: top.map(function (d) { return d.value; }),
+        barWidth: 9,
+        itemStyle: {
+          borderRadius: [0, 5, 5, 0],
+          color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+            { offset: 0, color: 'rgba(56,189,248,.25)' },
+            { offset: 1, color: '#38bdf8' }
+          ])
+        },
+        label: {
+          show: true, position: 'right', color: '#bae6fd',
+          fontFamily: 'Consolas, monospace', fontSize: 11
+        }
+      }]
+    });
+  }
+
+  /* ---------------- 3. 品类占比 ---------------- */
+  function wan_drawPie() {
+    var c = wan_initChart('wan_pie');
+    c.setOption({
+      tooltip: Object.assign({}, WAN_TIP, { trigger: 'item', formatter: '{b}<br/>{c} 万元（{d}%）' }),
+      legend: {
+        orient: 'vertical', right: 6, top: 'center',
+        itemWidth: 8, itemHeight: 8, itemGap: 10,
+        textStyle: { color: WAN_TEXT, fontSize: 11 }
+      },
+      color: ['#38bdf8', '#22d3ee', '#818cf8', '#34d399', '#fbbf24'],
+      series: [{
+        type: 'pie',
+        radius: ['52%', '74%'],
+        center: ['36%', '50%'],
+        avoidLabelOverlap: true,
+        itemStyle: { borderColor: '#0a1526', borderWidth: 2 },
+        label: { show: false },
+        data: [
+          { name: '数码家电', value: 3860 },
+          { name: '服饰鞋包', value: 2940 },
+          { name: '美妆个护', value: 1720 },
+          { name: '食品生鲜', value: 1280 },
+          { name: '家居日用', value: 860 }
+        ]
+      }]
+    });
+  }
+
+  /* ---------------- 4. 24 小时趋势 ---------------- */
+  function wan_hours() {
+    var arr = [];
+    for (var i = 0; i < 24; i++) arr.push((i < 10 ? '0' : '') + i + ':00');
+    return arr;
+  }
+  function wan_trendSeries(seed) {
+    var data = [];
+    for (var i = 0; i < 24; i++) {
+      var base = 120 + 520 * Math.exp(-Math.pow(i - 10, 2) / 26) + 640 * Math.exp(-Math.pow(i - 20, 2) / 14);
+      if (i < 6) base *= 0.28;
+      data.push(Math.round(base * (0.92 + ((seed || 1) % 7) * 0.02 + Math.random() * 0.08)));
+    }
+    return data;
+  }
+
+  function wan_drawTrend(name) {
+    var c = wan_charts['wan_trend'] || wan_initChart('wan_trend');
+    var data = wan_trendSeries(name ? name.length : 3);
+    c.setOption({
+      grid: { left: 44, right: 18, top: 14, bottom: 26 },
+      tooltip: Object.assign({}, WAN_TIP, { trigger: 'axis' }),
+      xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: wan_hours(),
+        axisLine: { lineStyle: { color: 'rgba(56,189,248,.2)' } },
+        axisTick: { show: false },
+        axisLabel: { color: WAN_AXIS, fontSize: 10, interval: 3 }
+      },
+      yAxis: {
+        type: 'value',
+        splitLine: { lineStyle: { color: WAN_SPLIT } },
+        axisLabel: { color: WAN_AXIS, fontSize: 10 }
+      },
+      series: [{
+        type: 'line',
+        smooth: true,
+        symbol: 'none',
+        data: data,
+        lineStyle: { width: 2, color: '#38bdf8' },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(56,189,248,.42)' },
+            { offset: 1, color: 'rgba(56,189,248,.02)' }
+          ])
+        }
+      }]
+    }, true);
+  }
+
+  function wan_trendTitle(name) {
+    var t = wan_$('wan_trend_title');
+    t.innerHTML = '24 小时订单趋势 <small>' + (name || '全国') + '</small>';
+  }
+
+  /* ---------------- 5. 渠道玫瑰图 ---------------- */
+  function wan_drawRose() {
+    var c = wan_initChart('wan_rose');
+    c.setOption({
+      tooltip: Object.assign({}, WAN_TIP, { trigger: 'item', formatter: '{b}<br/>{c}%（占比）' }),
+      legend: {
+        bottom: 0, itemWidth: 8, itemHeight: 8, itemGap: 10,
+        textStyle: { color: WAN_TEXT, fontSize: 11 }
+      },
+      color: ['#38bdf8', '#22d3ee', '#a78bfa', '#f472b6', '#fbbf24'],
+      series: [{
+        type: 'pie',
+        roseType: 'radius',
+        radius: ['22%', '68%'],
+        center: ['50%', '44%'],
+        itemStyle: { borderColor: '#0a1526', borderWidth: 2, borderRadius: 4 },
+        label: { color: WAN_TEXT, fontSize: 10, formatter: '{b}\n{d}%' },
+        labelLine: { length: 6, length2: 8, lineStyle: { color: 'rgba(56,189,248,.35)' } },
+        data: [
+          { value: 38, name: 'APP' },
+          { value: 26, name: '小程序' },
+          { value: 18, name: 'H5' },
+          { value: 11, name: '直播' },
+          { value: 7, name: '线下' }
+        ]
+      }]
+    });
+  }
+
+  /* ---------------- 6. 履约仪表 ---------------- */
+  function wan_drawGauge() {
+    var c = wan_initChart('wan_gauge');
+    c.setOption({
+      series: [{
+        type: 'gauge',
+        startAngle: 210,
+        endAngle: -30,
+        radius: '92%',
+        center: ['50%', '62%'],
+        min: 0, max: 100,
+        progress: {
+          show: true, width: 10, roundCap: true,
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+              { offset: 0, color: '#22d3ee' },
+              { offset: 1, color: '#34d399' }
+            ])
+          }
+        },
+        axisLine: { lineStyle: { width: 10, color: [[1, 'rgba(56,189,248,.14)']] } },
+        axisTick: { show: false },
+        splitLine: { length: 6, lineStyle: { color: 'rgba(56,189,248,.35)', width: 1 } },
+        axisLabel: { show: false },
+        pointer: { width: 4, length: '62%', itemStyle: { color: '#7dd3fc' } },
+        anchor: { show: true, size: 8, itemStyle: { color: '#7dd3fc' } },
+        title: { show: true, offsetCenter: [0, '42%'], color: '#7f9cbd', fontSize: 11 },
+        detail: {
+          valueAnimation: true,
+          offsetCenter: [0, '4%'],
+          fontFamily: 'Consolas, monospace',
+          fontSize: 22,
+          color: '#eaf7ff',
+          formatter: '{value}%'
+        },
+        data: [{ value: 96, name: '发货及时率' }]
+      }]
+    });
+  }
+
+  /* ---------------- 实时成交列表 ---------------- */
+  var wan_goods = ['蓝牙耳机', '机械键盘', '轻薄羽绒服', '精华水', '空气炸锅', '猫粮', '运动鞋', '充电宝'];
+  var wan_places = ['广东深圳', '浙江杭州', '江苏南京', '北京朝阳', '四川成都', '上海浦东', '湖北武汉', '陕西西安'];
+
+  function wan_feedItem() {
+    var li = document.createElement('li');
+    var t = new Date();
+    var hhmm = ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2) + ':' + ('0' + t.getSeconds()).slice(-2);
+    var goods = wan_goods[Math.floor(Math.random() * wan_goods.length)];
+    var place = wan_places[Math.floor(Math.random() * wan_places.length)];
+    var money = (Math.random() * 900 + 39).toFixed(0);
+    li.innerHTML = '<span class="wan_t">' + hhmm + '</span>' +
+      '<span class="wan_p">' + place + ' · ' + goods + '</span>' +
+      '<span class="wan_m">￥' + money + '</span>';
+    return li;
+  }
+
+  function wan_pushFeed() {
+    var ul = wan_$('wan_feed');
+    ul.insertBefore(wan_feedItem(), ul.firstChild);
+    while (ul.children.length > 8) ul.removeChild(ul.lastChild);
+  }
+
+  /* ---------------- KPI 波动 ---------------- */
+  function wan_tickKpi() {
+    var gmv = 2.6 + Math.random() * 0.5;
+    var order = 17.4 + Math.random() * 2.2;
+    var user = 94 + Math.random() * 4;
+    var cvr = 4.4 + Math.random() * 0.6;
+    wan_$('wan_kpi_gmv').innerHTML = gmv.toFixed(2) + '<small>亿</small>';
+    wan_$('wan_kpi_order').innerHTML = order.toFixed(1) + '<small>万</small>';
+    wan_$('wan_kpi_user').innerHTML = user.toFixed(1) + '<small>万</small>';
+    wan_$('wan_kpi_cvr').innerHTML = cvr.toFixed(2) + '<small>%</small>';
+  }
+
+  /* ---------------- 时钟 ---------------- */
+  function wan_clock() {
+    var d = new Date();
+    var p = function (n) { return ('0' + n).slice(-2); };
+    wan_$('wan_clock').textContent =
+      d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' +
+      p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+  }
+
+  /* ---------------- 启动 ---------------- */
+  function wan_start(geoJson) {
+    echarts.registerMap('china', geoJson);
+    wan_drawMap();
+    wan_drawBar();
+    wan_drawPie();
+    wan_drawTrend();
+    wan_drawRose();
+    wan_drawGauge();
+
+    for (var i = 0; i < 7; i++) wan_pushFeed();
+    wan_clock();
+    setInterval(wan_clock, 1000);
+    setInterval(wan_pushFeed, 3200);
+    setInterval(wan_tickKpi, 5000);
+
+    setInterval(function () {
+      wan_charts['wan_map'].setOption({ series: [{ data: wan_provinceData(true) }] });
+    }, 6000);
+  }
+
+  /* 优先 fetch json；file:// 双击时浏览器禁止读取本地文件，退回预载的 JS 副本 */
+  fetch('cdn/echarts/data/china.json')
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (geo) { wan_start(geo); })
+    .catch(function () {
+      if (window.WAN_CHINA_GEO) { wan_start(window.WAN_CHINA_GEO); return; }
+      var s = document.createElement('script');
+      s.src = 'cdn/echarts/data/china-geo.js';
+      s.onload = function () { wan_start(window.WAN_CHINA_GEO); };
+      document.body.appendChild(s);
+    });
+
+  /* ---------------- 自适应 ---------------- */
+  var wan_lastW = 0, wan_lastH = 0;
+  window.addEventListener('resize', function () {
+    var w = document.documentElement.clientWidth;
+    var h = document.documentElement.clientHeight;
+    if (w === wan_lastW && h === wan_lastH) return;
+    wan_lastW = w; wan_lastH = h;
+    for (var k in wan_charts) wan_charts[k].resize();
+  });
+})();
+</script>
+</body>
+</html>
