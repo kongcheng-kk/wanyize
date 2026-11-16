@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  文件：18-7.html
+  作者：万逸泽（学号 24001010412）
+  建立时间：2026-11-16 13:26
+  使用的大模型：deepseek-v4.1-flash
+  提示词：
+    实现18-6.html，实现基于mermaid的智能客服系统的流程图和er图，cdn文件下载到cdn目录下。
+    实现18-7.html，实现基于three.js的两个图表，cdn文件下载到cdn目录下。
+  说明：Three.js r128 本地渲染的两个 3D 图表：
+        左侧为智能客服各渠道会话量的 3D 柱状图，右侧为咨询意图分布的 3D 环形图。
+        支持拖拽旋转、自动旋转、hover 高亮与重置视角。
+        依赖文件：cdn/three/three.min.js（本地，无在线 CDN 请求）。
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18-7 Three.js 双图表 · 渠道会话量与意图分布</title>
+<style>
+  :root {
+    --wan_bg: #050a14;
+    --wan_panel: #0a1526;
+    --wan_line: rgba(56, 189, 248, .18);
+    --wan_cyan: #38bdf8;
+    --wan_ink: #e6f1ff;
+    --wan_sub: #7f9cbd;
+    --wan_mono: Consolas, "JetBrains Mono", monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background:
+      radial-gradient(1100px 560px at 50% -10%, rgba(56, 189, 248, .15), transparent 70%),
+      radial-gradient(900px 520px at 88% 108%, rgba(167, 139, 250, .12), transparent 70%),
+      var(--wan_bg);
+    color: var(--wan_ink);
+    padding: 28px 0 34px;
+  }
+
+  .wan_page {
+    width: min(1200px, calc(100% - 32px));
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ---------- 顶部 ---------- */
+  .wan_top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .wan_back {
+    color: var(--wan_cyan);
+    text-decoration: none;
+    font-size: 13px;
+    border: 1px solid rgba(56, 189, 248, .28);
+    background: rgba(56, 189, 248, .06);
+    border-radius: 999px;
+    padding: 6px 14px;
+    transition: background .18s ease, border-color .18s ease;
+  }
+  .wan_back:hover { background: rgba(56, 189, 248, .16); border-color: rgba(56, 189, 248, .6); }
+
+  .wan_badge {
+    font-family: var(--wan_mono);
+    font-size: 11.5px;
+    color: #9fd8f7;
+    letter-spacing: 1px;
+    border: 1px solid rgba(56, 189, 248, .24);
+    border-radius: 999px;
+    padding: 5px 12px;
+  }
+
+  .wan_head h1 {
+    font-size: 30px;
+    letter-spacing: 2px;
+    line-height: 1.3;
+    background: linear-gradient(180deg, #f5fbff, #a5b4fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .wan_head .wan_sub {
+    margin-top: 8px;
+    font-size: 13.5px;
+    color: var(--wan_sub);
+    letter-spacing: .4px;
+  }
+
+  .wan_meta { display: flex; gap: 8px; flex-wrap: wrap; }
+  .wan_meta span {
+    font-family: var(--wan_mono);
+    font-size: 11.5px;
+    color: #9fd8f7;
+    border: 1px solid rgba(56, 189, 248, .18);
+    background: rgba(56, 189, 248, .05);
+    border-radius: 6px;
+    padding: 4px 9px;
+  }
+
+  .wan_note {
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: #9fb6cc;
+    border-left: 3px solid rgba(56, 189, 248, .6);
+    background: rgba(56, 189, 248, .05);
+    border-radius: 0 10px 10px 0;
+    padding: 10px 14px;
+  }
+  .wan_note b { color: #bfe4ff; font-weight: 600; }
+
+  /* ---------- KPI ---------- */
+  .wan_kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .wan_kpi {
+    border: 1px solid var(--wan_line);
+    border-radius: 12px;
+    background: var(--wan_panel);
+    padding: 12px 14px;
+  }
+  .wan_kpi span { display: block; font-size: 11.5px; color: var(--wan_sub); letter-spacing: .5px; }
+  .wan_kpi strong {
+    display: block;
+    margin-top: 5px;
+    font-family: var(--wan_mono);
+    font-size: 24px;
+    color: #eaf7ff;
+    font-weight: 600;
+  }
+  .wan_kpi small { display: block; margin-top: 3px; font-size: 11px; color: #5f7f9f; }
+
+  /* ---------- 卡片 ---------- */
+  .wan_grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+
+  .wan_card {
+    position: relative;
+    border: 1px solid var(--wan_line);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(12, 26, 45, .92), rgba(8, 17, 32, .94));
+    box-shadow: inset 0 0 40px rgba(56, 189, 248, .04);
+    padding: 18px 18px 16px;
+    min-width: 0;
+  }
+
+  .wan_card::before,
+  .wan_card::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: var(--wan_cyan);
+    border-style: solid;
+    opacity: .65;
+  }
+  .wan_card::before { left: -1px; top: -1px; border-width: 2px 0 0 2px; border-top-left-radius: 14px; }
+  .wan_card::after { right: -1px; bottom: -1px; border-width: 0 2px 2px 0; border-bottom-right-radius: 14px; }
+
+  .wan_cardHead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .wan_cardHead h2 {
+    font-size: 16.5px;
+    letter-spacing: 1px;
+    color: #cfe8ff;
+    padding-left: 10px;
+    border-left: 3px solid var(--wan_cyan);
+  }
+
+  .wan_cardHead p {
+    margin-top: 5px;
+    padding-left: 13px;
+    font-size: 12px;
+    color: var(--wan_sub);
+    line-height: 1.7;
+  }
+
+  .wan_tools { display: flex; gap: 7px; flex-wrap: wrap; }
+
+  .wan_btn {
+    border: 1px solid rgba(56, 189, 248, .3);
+    background: rgba(56, 189, 248, .07);
+    color: #a9d7f5;
+    border-radius: 8px;
+    padding: 5px 11px;
+    font-size: 11.5px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .16s ease, border-color .16s ease;
+  }
+  .wan_btn:hover { background: rgba(56, 189, 248, .16); border-color: rgba(56, 189, 248, .6); }
+
+  /* ---------- 3D 画布 ---------- */
+  .wan_canvasWrap {
+    position: relative;
+    height: 430px;
+    border: 1px solid rgba(56, 189, 248, .12);
+    border-radius: 12px;
+    overflow: hidden;
+    background:
+      radial-gradient(520px 260px at 50% 34%, rgba(56, 189, 248, .14), transparent 72%),
+      rgba(3, 10, 20, .62);
+  }
+
+  .wan_canvasWrap canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .wan_tooltip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(-50%, -112%);
+    background: rgba(3, 12, 22, .94);
+    border: 1px solid rgba(56, 189, 248, .5);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #dff2ff;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .12s ease;
+    box-shadow: 0 10px 24px -14px rgba(56, 189, 248, .8);
+    z-index: 3;
+  }
+  .wan_tooltip.is-show { opacity: 1; }
+  .wan_tooltip b { color: #7dd3fc; }
+
+  .wan_donutCenter {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .wan_donutCenter b {
+    display: block;
+    font-family: var(--wan_mono);
+    font-size: 27px;
+    color: #eaf7ff;
+    letter-spacing: 1px;
+    text-shadow: 0 0 18px rgba(56, 189, 248, .55);
+  }
+  .wan_donutCenter span { display: block; margin-top: 2px; font-size: 11.5px; color: var(--wan_sub); letter-spacing: 2px; }
+
+  /* ---------- 图例 ---------- */
+  .wan_legend {
+    display: flex;
+    gap: 8px 14px;
+    flex-wrap: wrap;
+    margin-top: 11px;
+    font-size: 11.5px;
+    color: #9fb6cc;
+  }
+  .wan_legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .wan_legend i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+
+  .wan_hint { margin-top: 9px; font-size: 11px; color: #5f7f9f; line-height: 1.7; }
+
+  .wan_error {
+    position: absolute;
+    inset: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 1px solid rgba(248, 113, 113, .4);
+    background: rgba(248, 113, 113, .08);
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: #fca5a5;
+  }
+
+  /* ---------- 页脚 ---------- */
+  .wan_foot {
+    margin-top: 2px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(56, 189, 248, .1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--wan_sub);
+  }
+  .wan_foot a { color: var(--wan_cyan); text-decoration: none; }
+  .wan_foot a:hover { text-decoration: underline; }
+
+  @media (max-width: 960px) {
+    .wan_grid { grid-template-columns: 1fr; }
+    .wan_kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 720px) {
+    body { padding: 20px 0 26px; }
+    .wan_page { width: calc(100% - 24px); }
+    .wan_head h1 { font-size: 23px; }
+    .wan_card { padding: 14px; }
+    .wan_canvasWrap { height: 340px; }
+    .wan_kpis { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wan_page">
+  <nav class="wan_top">
+    <a class="wan_back" href="index.html">← 返回首页</a>
+    <span class="wan_badge">第 18 章 · 图形绘制 · 18-7</span>
+  </nav>
+
+  <header class="wan_head">
+    <h1>Three.js 双图表 · 渠道会话量与意图分布</h1>
+    <p class="wan_sub">本地 cdn/three/three.min.js · 3D 柱状图 + 3D 环形图 · 拖拽旋转 / hover 高亮</p>
+  </header>
+
+  <div class="wan_meta">
+    <span>Three.js r128</span>
+    <span>WebGL</span>
+    <span>ExtrudeGeometry</span>
+    <span>cdn/three/three.min.js</span>
+  </div>
+
+  <div class="wan_note">
+    <b>说明：</b>两个图表由 Three.js 在本地渲染，不请求在线 CDN。左图按渠道展示本周会话量，
+    右图按意图展示咨询占比；按住鼠标拖拽可旋转视角，鼠标悬停可查看具体数值。
+  </div>
+
+  <section class="wan_kpis">
+    <div class="wan_kpi"><span>本周总会话</span><strong>3,730</strong><small>五个渠道合计</small></div>
+    <div class="wan_kpi"><span>平均首响</span><strong>1.8s</strong><small>人工 + 机器人</small></div>
+    <div class="wan_kpi"><span>一次解决率</span><strong>86%</strong><small>较上周 +4.2%</small></div>
+    <div class="wan_kpi"><span>人工转接率</span><strong>14%</strong><small>低置信度优先转人工</small></div>
+  </section>
+
+  <div class="wan_grid">
+    <section class="wan_card">
+      <div class="wan_cardHead">
+        <div>
+          <h2>渠道会话量 · 3D 柱状图</h2>
+          <p>柱高表示本周会话量，颜色区分渠道；拖拽旋转查看立体结构</p>
+        </div>
+        <div class="wan_tools">
+          <button type="button" class="wan_btn" id="wan_barAuto">暂停旋转</button>
+          <button type="button" class="wan_btn" id="wan_barReset">重置视角</button>
+        </div>
+      </div>
+      <div class="wan_canvasWrap" id="wan_barWrap">
+        <canvas id="wan_barCanvas"></canvas>
+        <div class="wan_tooltip" id="wan_barTip"></div>
+      </div>
+      <div class="wan_legend" id="wan_barLegend"></div>
+      <p class="wan_hint">数据口径：本周一至周日，按会话创建渠道去重统计。</p>
+    </section>
+
+    <section class="wan_card">
+      <div class="wan_cardHead">
+        <div>
+          <h2>意图分布 · 3D 环形图</h2>
+          <p>环形扇区表示各意图占比，hover 时扇区上浮并显示明细</p>
+        </div>
+        <div class="wan_tools">
+          <button type="button" class="wan_btn" id="wan_donutAuto">暂停旋转</button>
+          <button type="button" class="wan_btn" id="wan_donutReset">重置视角</button>
+        </div>
+      </div>
+      <div class="wan_canvasWrap" id="wan_donutWrap">
+        <canvas id="wan_donutCanvas"></canvas>
+        <div class="wan_donutCenter"><b>1,286</b><span>意图样本</span></div>
+        <div class="wan_tooltip" id="wan_donutTip"></div>
+      </div>
+      <div class="wan_legend" id="wan_donutLegend"></div>
+      <p class="wan_hint">数据口径：近 7 天已完成意图识别的会话，按一级意图归类。</p>
+    </section>
+  </div>
+
+  <footer class="wan_foot">
+    <span>万逸泽 · 24001010412 · 高级网页设计 I</span>
+    <span><a href="18-6.html">← 上一节 18-6 Mermaid</a> · <a href="index.html">返回首页</a></span>
+  </footer>
+</div>
+
+<script src="cdn/three/three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var wan_barData = [
+    { name: '网页', value: 1280, color: 0x38bdf8 },
+    { name: 'App', value: 960, color: 0x22d3ee },
+    { name: '小程序', value: 760, color: 0x818cf8 },
+    { name: '电话', value: 420, color: 0xa78bfa },
+    { name: 'API', value: 310, color: 0xf472b6 }
+  ];
+
+  var wan_donutData = [
+    { name: '售后咨询', value: 32, color: 0x38bdf8 },
+    { name: '订单查询', value: 26, color: 0x22d3ee },
+    { name: '产品咨询', value: 22, color: 0x818cf8 },
+    { name: '投诉建议', value: 12, color: 0xa78bfa },
+    { name: '其他', value: 8, color: 0xf472b6 }
+  ];
+
+  function wan_hex(wan_color) {
+    return '#' + ('000000' + wan_color.toString(16)).slice(-6);
+  }
+
+  function wan_fail(wan_wrap, wan_message) {
+    var wan_box = document.createElement('div');
+    wan_box.className = 'wan_error';
+    wan_box.textContent = wan_message;
+    wan_wrap.appendChild(wan_box);
+  }
+
+  if (!window.THREE) {
+    wan_fail(document.getElementById('wan_barWrap'), 'Three.js 未加载，请检查 cdn/three/three.min.js');
+    wan_fail(document.getElementById('wan_donutWrap'), 'Three.js 未加载，请检查 cdn/three/three.min.js');
+    console.error('[18-7] THREE 未加载');
+    return;
+  }
+
+  /* ---------- 文字精灵 ---------- */
+  function wan_label(wan_text, wan_color, wan_size) {
+    var wan_canvas = document.createElement('canvas');
+    wan_canvas.width = 256;
+    wan_canvas.height = 96;
+    var wan_ctx = wan_canvas.getContext('2d');
+    var wan_font = wan_size || 38;
+    wan_ctx.font = 'bold ' + wan_font + 'px "Microsoft YaHei", "PingFang SC", sans-serif';
+    var wan_width = wan_ctx.measureText(wan_text).width;
+    if (wan_width > 226) {
+      wan_font = Math.max(20, Math.floor(wan_font * 226 / wan_width));
+      wan_ctx.font = 'bold ' + wan_font + 'px "Microsoft YaHei", "PingFang SC", sans-serif';
+    }
+    wan_ctx.textAlign = 'center';
+    wan_ctx.textBaseline = 'middle';
+    wan_ctx.fillStyle = wan_color || '#eaf7ff';
+    wan_ctx.fillText(wan_text, 128, 50);
+
+    var wan_texture = new THREE.CanvasTexture(wan_canvas);
+    wan_texture.minFilter = THREE.LinearFilter;
+    var wan_material = new THREE.SpriteMaterial({
+      map: wan_texture,
+      transparent: true,
+      depthWrite: false
+    });
+    var wan_sprite = new THREE.Sprite(wan_material);
+    wan_sprite.scale.set(1.5, 0.56, 1);
+    return wan_sprite;
+  }
+
+  /* ---------- 通用 3D 视图 ---------- */
+  function wan_view(wan_canvas, wan_options) {
+    var wan_opts = wan_options || {};
+    var wan_renderer = new THREE.WebGLRenderer({
+      canvas: wan_canvas,
+      antialias: true,
+      alpha: true
+    });
+    wan_renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+    var wan_scene = new THREE.Scene();
+    var wan_camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+    var wan_camPos = wan_opts.camera || [7, 6, 9];
+    var wan_lookAt = wan_opts.lookAt || [0, 1.5, 0];
+    wan_camera.position.set(wan_camPos[0], wan_camPos[1], wan_camPos[2]);
+    wan_camera.lookAt(wan_lookAt[0], wan_lookAt[1], wan_lookAt[2]);
+
+    wan_scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    var wan_dir = new THREE.DirectionalLight(0xffffff, 0.95);
+    wan_dir.position.set(6, 12, 8);
+    wan_scene.add(wan_dir);
+
+    var wan_p1 = new THREE.PointLight(0x38bdf8, 0.75, 40);
+    wan_p1.position.set(-7, 5, 7);
+    wan_scene.add(wan_p1);
+
+    var wan_p2 = new THREE.PointLight(0xa78bfa, 0.55, 40);
+    wan_p2.position.set(7, 4, -6);
+    wan_scene.add(wan_p2);
+
+    var wan_root = new THREE.Group();
+    wan_scene.add(wan_root);
+
+    var wan_rotY = wan_opts.rotY === undefined ? 0.25 : wan_opts.rotY;
+    var wan_rotX = wan_opts.rotX === undefined ? 0.1 : wan_opts.rotX;
+    var wan_dragging = false;
+    var wan_lastX = 0;
+    var wan_lastY = 0;
+    var wan_auto = true;
+
+    wan_canvas.addEventListener('pointerdown', function (wan_event) {
+      wan_dragging = true;
+      wan_lastX = wan_event.clientX;
+      wan_lastY = wan_event.clientY;
+      wan_canvas.style.cursor = 'grabbing';
+      if (wan_canvas.setPointerCapture) {
+        try { wan_canvas.setPointerCapture(wan_event.pointerId); } catch (wan_e) { /* ignore */ }
+      }
+    });
+
+    wan_canvas.addEventListener('pointermove', function (wan_event) {
+      if (wan_dragging) {
+        wan_rotY += (wan_event.clientX - wan_lastX) * 0.008;
+        wan_rotX += (wan_event.clientY - wan_lastY) * 0.005;
+        wan_rotX = Math.max(-0.3, Math.min(0.85, wan_rotX));
+        wan_lastX = wan_event.clientX;
+        wan_lastY = wan_event.clientY;
+      }
+      if (wan_opts.onPointerMove) wan_opts.onPointerMove(wan_event);
+    });
+
+    function wan_stopDrag() {
+      wan_dragging = false;
+      wan_canvas.style.cursor = 'grab';
+    }
+    wan_canvas.addEventListener('pointerup', wan_stopDrag);
+    wan_canvas.addEventListener('pointercancel', wan_stopDrag);
+    wan_canvas.addEventListener('pointerleave', function () {
+      wan_stopDrag();
+      if (wan_opts.onPointerLeave) wan_opts.onPointerLeave();
+    });
+
+    function wan_resize() {
+      var wan_w = wan_canvas.clientWidth;
+      var wan_h = wan_canvas.clientHeight;
+      if (!wan_w || !wan_h) return;
+      wan_renderer.setSize(wan_w, wan_h, false);
+      wan_camera.aspect = wan_w / wan_h;
+      wan_camera.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', wan_resize);
+    wan_resize();
+
+    var wan_watch = {
+      scene: wan_scene,
+      camera: wan_camera,
+      renderer: wan_renderer,
+      root: wan_root,
+      onFrame: null,
+      setAuto: function (wan_flag) { wan_auto = Boolean(wan_flag); },
+      getAuto: function () { return wan_auto; },
+      reset: function () {
+        wan_rotY = wan_opts.rotY === undefined ? 0.25 : wan_opts.rotY;
+        wan_rotX = wan_opts.rotX === undefined ? 0.1 : wan_opts.rotX;
+      }
+    };
+
+    function wan_tick() {
+      requestAnimationFrame(wan_tick);
+      if (document.hidden) return;
+      if (!wan_dragging && wan_auto) wan_rotY += 0.0024;
+      wan_root.rotation.y = wan_rotY;
+      wan_root.rotation.x = wan_rotX;
+      if (wan_watch.onFrame) wan_watch.onFrame();
+      wan_renderer.render(wan_scene, wan_camera);
+    }
+    wan_tick();
+
+    return wan_watch;
+  }
+
+  /* ---------- 图例 ---------- */
+  function wan_legend(wan_targetId, wan_items, wan_suffix) {
+    var wan_box = document.getElementById(wan_targetId);
+    wan_box.innerHTML = wan_items.map(function (wan_item) {
+      return '<span><i style="background:' + wan_hex(wan_item.color) + '"></i>' +
+        wan_item.name + ' ' + wan_item.value + (wan_suffix || '') + '</span>';
+    }).join('');
+  }
+  wan_legend('wan_barLegend', wan_barData, ' 次');
+  wan_legend('wan_donutLegend', wan_donutData, '%');
+
+  /* ---------- 3D 柱状图 ---------- */
+  (function () {
+    var wan_canvas = document.getElementById('wan_barCanvas');
+    var wan_wrap = document.getElementById('wan_barWrap');
+    var wan_tip = document.getElementById('wan_barTip');
+    var wan_viewBar = wan_view(wan_canvas, {
+      camera: [7.4, 6.2, 9.4],
+      lookAt: [0, 1.6, 0],
+      rotY: 0.28,
+      rotX: 0.12
+    });
+
+    var wan_pillars = new THREE.Group();
+    var wan_labels = new THREE.Group();
+    wan_viewBar.root.add(wan_pillars);
+    wan_viewBar.root.add(wan_labels);
+
+    var wan_max = 1280;
+    var wan_count = wan_barData.length;
+    var wan_meshes = [];
+
+    wan_barData.forEach(function (wan_item, wan_index) {
+      var wan_height = 0.9 + (wan_item.value / wan_max) * 3.7;
+      var wan_x = (wan_index - (wan_count - 1) / 2) * 1.55;
+
+      var wan_geo = new THREE.BoxGeometry(0.95, wan_height, 0.95);
+      var wan_mat = new THREE.MeshStandardMaterial({
+        color: wan_item.color,
+        metalness: 0.35,
+        roughness: 0.3,
+        emissive: wan_item.color,
+        emissiveIntensity: 0.14
+      });
+      var wan_mesh = new THREE.Mesh(wan_geo, wan_mat);
+      wan_mesh.position.set(wan_x, wan_height / 2, 0);
+      wan_mesh.userData = {
+        name: wan_item.name,
+        value: wan_item.value,
+        color: wan_item.color,
+        hovered: false
+      };
+      wan_pillars.add(wan_mesh);
+      wan_meshes.push(wan_mesh);
+
+      var wan_cap = new THREE.Mesh(
+        new THREE.BoxGeometry(1.02, 0.06, 1.02),
+        new THREE.MeshBasicMaterial({ color: wan_item.color })
+      );
+      wan_cap.position.set(wan_x, wan_height + 0.03, 0);
+      wan_labels.add(wan_cap);
+
+      var wan_valueLabel = wan_label(String(wan_item.value), '#eaf7ff', 38);
+      wan_valueLabel.position.set(wan_x, wan_height + 0.4, 0);
+      wan_valueLabel.scale.set(1.1, 0.42, 1);
+      wan_labels.add(wan_valueLabel);
+
+      var wan_nameLabel = wan_label(wan_item.name, '#9fd8f7', 32);
+      wan_nameLabel.position.set(wan_x, 0.2, 1.35);
+      wan_nameLabel.scale.set(1.35, 0.5, 1);
+      wan_labels.add(wan_nameLabel);
+    });
+
+    var wan_grid = new THREE.GridHelper(10, 10, 0x215575, 0x14344d);
+    wan_grid.position.y = 0;
+    wan_labels.add(wan_grid);
+
+    /* 首屏直接展示完整柱高，避免无头截图或低帧率环境停在生长中间态 */
+    wan_pillars.scale.y = 1;
+
+    /* hover 高亮 + tooltip */
+    var wan_ray = new THREE.Raycaster();
+    var wan_ptr = new THREE.Vector2();
+    var wan_hover = null;
+
+    wan_canvas.addEventListener('pointermove', function (wan_event) {
+      var wan_rect = wan_canvas.getBoundingClientRect();
+      wan_ptr.x = ((wan_event.clientX - wan_rect.left) / wan_rect.width) * 2 - 1;
+      wan_ptr.y = -((wan_event.clientY - wan_rect.top) / wan_rect.height) * 2 + 1;
+      wan_ray.setFromCamera(wan_ptr, wan_viewBar.camera);
+      var wan_hits = wan_ray.intersectObjects(wan_meshes, false);
+
+      if (wan_hits.length) {
+        var wan_obj = wan_hits[0].object;
+        if (wan_hover !== wan_obj) {
+          if (wan_hover) wan_hover.material.emissiveIntensity = 0.14;
+          wan_hover = wan_obj;
+          wan_obj.material.emissiveIntensity = 0.55;
+        }
+        wan_tip.innerHTML = '<b>' + wan_obj.userData.name + '</b> · ' +
+          wan_obj.userData.value.toLocaleString() + ' 次';
+        wan_tip.style.left = (wan_event.clientX - wan_rect.left) + 'px';
+        wan_tip.style.top = (wan_event.clientY - wan_rect.top) + 'px';
+        wan_tip.classList.add('is-show');
+        wan_canvas.style.cursor = 'pointer';
+      } else {
+        if (wan_hover) {
+          wan_hover.material.emissiveIntensity = 0.14;
+          wan_hover = null;
+        }
+        wan_tip.classList.remove('is-show');
+      }
+    });
+
+    wan_canvas.addEventListener('pointerleave', function () {
+      if (wan_hover) {
+        wan_hover.material.emissiveIntensity = 0.14;
+        wan_hover = null;
+      }
+      wan_tip.classList.remove('is-show');
+    });
+
+    var wan_autoBtn = document.getElementById('wan_barAuto');
+    wan_autoBtn.addEventListener('click', function () {
+      wan_viewBar.setAuto(!wan_viewBar.getAuto());
+      wan_autoBtn.textContent = wan_viewBar.getAuto() ? '暂停旋转' : '继续旋转';
+    });
+
+    document.getElementById('wan_barReset').addEventListener('click', function () {
+      wan_viewBar.reset();
+    });
+
+    console.log('[18-7] 3D 柱状图已初始化');
+  })();
+
+  /* ---------- 3D 环形图 ---------- */
+  (function () {
+    var wan_canvas = document.getElementById('wan_donutCanvas');
+    var wan_tip = document.getElementById('wan_donutTip');
+    var wan_viewDonut = wan_view(wan_canvas, {
+      camera: [0, 5.6, 7.6],
+      lookAt: [0, 0.2, 0],
+      rotY: -0.2,
+      rotX: 0.04
+    });
+
+    var wan_group = new THREE.Group();
+    wan_group.rotation.x = -0.16;
+    wan_viewDonut.root.add(wan_group);
+
+    var wan_total = wan_donutData.reduce(function (wan_sum, wan_item) {
+      return wan_sum + wan_item.value;
+    }, 0);
+
+    var wan_start = -Math.PI / 2;
+    var wan_meshes = [];
+
+    wan_donutData.forEach(function (wan_item) {
+      var wan_angle = (wan_item.value / wan_total) * Math.PI * 2;
+
+      var wan_shape = new THREE.Shape();
+      wan_shape.absarc(0, 0, 2.35, wan_start, wan_start + wan_angle, false);
+      wan_shape.absarc(0, 0, 1.12, wan_start + wan_angle, wan_start, true);
+      wan_shape.closePath();
+
+      var wan_geo = new THREE.ExtrudeGeometry(wan_shape, {
+        depth: 0.42,
+        bevelEnabled: true,
+        bevelSize: 0.025,
+        bevelThickness: 0.03,
+        bevelSegments: 2,
+        curveSegments: 44
+      });
+
+      var wan_mat = new THREE.MeshStandardMaterial({
+        color: wan_item.color,
+        metalness: 0.32,
+        roughness: 0.34,
+        emissive: wan_item.color,
+        emissiveIntensity: 0.14
+      });
+
+      var wan_mesh = new THREE.Mesh(wan_geo, wan_mat);
+      wan_mesh.rotation.x = -Math.PI / 2;
+      wan_mesh.position.y = 0.42;
+
+      var wan_mid = wan_start + wan_angle / 2;
+      wan_mesh.userData = {
+        name: wan_item.name,
+        value: wan_item.value,
+        percent: Math.round(wan_item.value / wan_total * 100),
+        color: wan_item.color,
+        baseX: 0,
+        baseZ: 0,
+        mid: wan_mid,
+        hovered: false
+      };
+
+      wan_group.add(wan_mesh);
+      wan_meshes.push(wan_mesh);
+      wan_start += wan_angle;
+    });
+
+    var wan_base = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.62, 0.72, 0.2, 48),
+      new THREE.MeshStandardMaterial({ color: 0x0e2a44, metalness: 0.45, roughness: 0.4 })
+    );
+    wan_base.position.y = 0.1;
+    wan_group.add(wan_base);
+
+    var wan_ring = new THREE.Mesh(
+      new THREE.TorusGeometry(1.12, 0.018, 8, 80),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45 })
+    );
+    wan_ring.rotation.x = Math.PI / 2;
+    wan_ring.position.y = 0.44;
+    wan_group.add(wan_ring);
+
+    var wan_ray = new THREE.Raycaster();
+    var wan_ptr = new THREE.Vector2();
+    var wan_hover = null;
+
+    wan_canvas.addEventListener('pointermove', function (wan_event) {
+      var wan_rect = wan_canvas.getBoundingClientRect();
+      wan_ptr.x = ((wan_event.clientX - wan_rect.left) / wan_rect.width) * 2 - 1;
+      wan_ptr.y = -((wan_event.clientY - wan_rect.top) / wan_rect.height) * 2 + 1;
+      wan_ray.setFromCamera(wan_ptr, wan_viewDonut.camera);
+      var wan_hits = wan_ray.intersectObjects(wan_meshes, false);
+
+      if (wan_hits.length) {
+        var wan_obj = wan_hits[0].object;
+        if (wan_hover !== wan_obj) {
+          if (wan_hover) {
+            wan_hover.position.x = 0;
+            wan_hover.position.z = 0;
+            wan_hover.material.emissiveIntensity = 0.14;
+          }
+          wan_hover = wan_obj;
+          wan_obj.material.emissiveIntensity = 0.55;
+          wan_obj.position.x = Math.cos(wan_obj.userData.mid) * 0.16;
+          wan_obj.position.z = -Math.sin(wan_obj.userData.mid) * 0.16;
+        }
+        wan_tip.innerHTML = '<b>' + wan_obj.userData.name + '</b> · ' +
+          wan_obj.userData.percent + '%（' + wan_obj.userData.value + ' 个样本）';
+        wan_tip.style.left = (wan_event.clientX - wan_rect.left) + 'px';
+        wan_tip.style.top = (wan_event.clientY - wan_rect.top) + 'px';
+        wan_tip.classList.add('is-show');
+        wan_canvas.style.cursor = 'pointer';
+      } else {
+        if (wan_hover) {
+          wan_hover.position.x = 0;
+          wan_hover.position.z = 0;
+          wan_hover.material.emissiveIntensity = 0.14;
+          wan_hover = null;
+        }
+        wan_tip.classList.remove('is-show');
+      }
+    });
+
+    wan_canvas.addEventListener('pointerleave', function () {
+      if (wan_hover) {
+        wan_hover.position.x = 0;
+        wan_hover.position.z = 0;
+        wan_hover.material.emissiveIntensity = 0.14;
+        wan_hover = null;
+      }
+      wan_tip.classList.remove('is-show');
+    });
+
+    var wan_autoBtn = document.getElementById('wan_donutAuto');
+    wan_autoBtn.addEventListener('click', function () {
+      wan_viewDonut.setAuto(!wan_viewDonut.getAuto());
+      wan_autoBtn.textContent = wan_viewDonut.getAuto() ? '暂停旋转' : '继续旋转';
+    });
+
+    document.getElementById('wan_donutReset').addEventListener('click', function () {
+      wan_viewDonut.reset();
+    });
+
+    console.log('[18-7] 3D 环形图已初始化');
+  })();
+})();
+</script>
+</body>
+</html>

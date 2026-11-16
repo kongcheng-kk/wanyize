@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  文件：18-6.html
+  作者：万逸泽（学号 24001010412）
+  建立时间：2026-11-16 13:22
+  使用的大模型：deepseek-v4.1-flash
+  提示词：
+    实现18-6.html，实现基于mermaid的智能客服系统的流程图和er图，cdn文件下载到cdn目录下。
+    实现18-7.html，实现基于three.js的两个图表，cdn文件下载到cdn目录下。
+  说明：Mermaid 11.4.1 本地渲染；上半部分为智能客服系统流程图，
+        下半部分为会话 / 消息 / 意图 / 知识库等实体的 ER 图。
+        依赖文件：cdn/mermaid/mermaid.min.js（本地，无在线 CDN 请求）。
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18-6 智能客服系统 · 流程图与 ER 图</title>
+<style>
+  :root {
+    --wan_bg: #050a14;
+    --wan_panel: #0a1526;
+    --wan_line: rgba(56, 189, 248, .18);
+    --wan_cyan: #38bdf8;
+    --wan_ink: #e6f1ff;
+    --wan_sub: #7f9cbd;
+    --wan_mono: Consolas, "JetBrains Mono", monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background:
+      radial-gradient(1100px 560px at 50% -10%, rgba(56, 189, 248, .15), transparent 70%),
+      radial-gradient(900px 500px at 90% 110%, rgba(139, 92, 246, .10), transparent 70%),
+      var(--wan_bg);
+    color: var(--wan_ink);
+    padding: 28px 0 34px;
+  }
+
+  .wan_page {
+    width: min(1200px, calc(100% - 32px));
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ---------- 顶部导航 ---------- */
+  .wan_top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .wan_back {
+    color: var(--wan_cyan);
+    text-decoration: none;
+    font-size: 13px;
+    border: 1px solid rgba(56, 189, 248, .28);
+    background: rgba(56, 189, 248, .06);
+    border-radius: 999px;
+    padding: 6px 14px;
+    transition: background .18s ease, border-color .18s ease;
+  }
+  .wan_back:hover { background: rgba(56, 189, 248, .16); border-color: rgba(56, 189, 248, .6); }
+
+  .wan_badge {
+    font-family: var(--wan_mono);
+    font-size: 11.5px;
+    color: #9fd8f7;
+    letter-spacing: 1px;
+    border: 1px solid rgba(56, 189, 248, .24);
+    border-radius: 999px;
+    padding: 5px 12px;
+  }
+
+  /* ---------- 标题 ---------- */
+  .wan_head h1 {
+    font-size: 30px;
+    letter-spacing: 2px;
+    line-height: 1.3;
+    background: linear-gradient(180deg, #f2fbff, #7dd3fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .wan_head .wan_sub {
+    margin-top: 8px;
+    font-size: 13.5px;
+    color: var(--wan_sub);
+    letter-spacing: .4px;
+  }
+
+  .wan_meta { display: flex; gap: 8px; flex-wrap: wrap; }
+  .wan_meta span {
+    font-family: var(--wan_mono);
+    font-size: 11.5px;
+    color: #9fd8f7;
+    border: 1px solid rgba(56, 189, 248, .18);
+    background: rgba(56, 189, 248, .05);
+    border-radius: 6px;
+    padding: 4px 9px;
+  }
+
+  .wan_note {
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: #9fb6cc;
+    border-left: 3px solid rgba(56, 189, 248, .6);
+    background: rgba(56, 189, 248, .05);
+    border-radius: 0 10px 10px 0;
+    padding: 10px 14px;
+  }
+  .wan_note b { color: #bfe4ff; font-weight: 600; }
+
+  /* ---------- 卡片 ---------- */
+  .wan_card {
+    position: relative;
+    border: 1px solid var(--wan_line);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(12, 26, 45, .92), rgba(8, 17, 32, .94));
+    box-shadow: inset 0 0 40px rgba(56, 189, 248, .04);
+    padding: 18px 20px 20px;
+  }
+
+  .wan_card::before,
+  .wan_card::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: var(--wan_cyan);
+    border-style: solid;
+    opacity: .65;
+  }
+  .wan_card::before { left: -1px; top: -1px; border-width: 2px 0 0 2px; border-top-left-radius: 14px; }
+  .wan_card::after { right: -1px; bottom: -1px; border-width: 0 2px 2px 0; border-bottom-right-radius: 14px; }
+
+  .wan_cardHead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .wan_cardHead h2 {
+    font-size: 17px;
+    letter-spacing: 1px;
+    color: #cfe8ff;
+    padding-left: 10px;
+    border-left: 3px solid var(--wan_cyan);
+  }
+
+  .wan_cardHead p {
+    margin-top: 6px;
+    padding-left: 13px;
+    font-size: 12.5px;
+    color: var(--wan_sub);
+    line-height: 1.7;
+  }
+
+  .wan_chip {
+    font-family: var(--wan_mono);
+    font-size: 11px;
+    color: #7dd3fc;
+    border: 1px solid rgba(56, 189, 248, .28);
+    background: rgba(56, 189, 248, .07);
+    border-radius: 999px;
+    padding: 4px 11px;
+    white-space: nowrap;
+  }
+
+  /* ---------- 图形区 ---------- */
+  .wan_diagram {
+    border: 1px solid rgba(56, 189, 248, .12);
+    border-radius: 12px;
+    background: rgba(4, 12, 22, .62);
+    padding: 16px;
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .wan_diagram--flow svg { max-width: 100%; height: auto; }
+
+  .wan_diagram--er {
+    display: block;
+    overflow-x: auto;
+  }
+  .wan_diagram--er svg { min-width: 960px; height: auto; }
+  .wan_diagram--er svg text { font-size: 12.5px !important; }
+  .wan_diagram--er svg .er.entityLabel { font-size: 14px !important; font-weight: 600; }
+
+  .wan_loading {
+    font-family: var(--wan_mono);
+    font-size: 12.5px;
+    color: var(--wan_sub);
+    letter-spacing: 1px;
+  }
+
+  .wan_error {
+    width: 100%;
+    border: 1px solid rgba(248, 113, 113, .4);
+    background: rgba(248, 113, 113, .08);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: #fca5a5;
+  }
+
+  /* ---------- 代码 ---------- */
+  .wan_code {
+    margin-top: 12px;
+    border-top: 1px dashed rgba(56, 189, 248, .14);
+    padding-top: 10px;
+  }
+
+  .wan_code summary {
+    cursor: pointer;
+    font-size: 12.5px;
+    color: #9fd8f7;
+    outline: none;
+  }
+
+  .wan_code pre {
+    margin-top: 10px;
+    max-height: 320px;
+    overflow: auto;
+    border: 1px solid rgba(56, 189, 248, .14);
+    border-radius: 10px;
+    background: rgba(3, 10, 20, .88);
+    padding: 12px 14px;
+    color: #a8d5f2;
+    font-family: var(--wan_mono);
+    font-size: 11.5px;
+    line-height: 1.7;
+    white-space: pre;
+  }
+
+  /* ---------- 页脚 ---------- */
+  .wan_foot {
+    margin-top: 2px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(56, 189, 248, .1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--wan_sub);
+  }
+  .wan_foot a { color: var(--wan_cyan); text-decoration: none; }
+  .wan_foot a:hover { text-decoration: underline; }
+
+  @media (max-width: 720px) {
+    body { padding: 20px 0 26px; }
+    .wan_page { width: calc(100% - 24px); }
+    .wan_head h1 { font-size: 23px; }
+    .wan_card { padding: 14px; }
+    .wan_diagram { padding: 10px; }
+    .wan_diagram--er svg { min-width: 820px; }
+  }
+</style>
+</head>
+<body>
+<div class="wan_page">
+  <nav class="wan_top">
+    <a class="wan_back" href="index.html">← 返回首页</a>
+    <span class="wan_badge">第 18 章 · 图形绘制 · 18-6</span>
+  </nav>
+
+  <header class="wan_head">
+    <h1>智能客服系统 · 流程图与 ER 图</h1>
+    <p class="wan_sub">Mermaid 11.4.1 本地渲染 · 从用户发起到会话归档的完整链路与数据模型</p>
+  </header>
+
+  <div class="wan_meta">
+    <span>Mermaid 11.4.1</span>
+    <span>flowchart TD</span>
+    <span>erDiagram</span>
+    <span>cdn/mermaid/mermaid.min.js</span>
+  </div>
+
+  <div class="wan_note">
+    <b>说明：</b>页面所有图形由本地 <b>cdn/mermaid/mermaid.min.js</b> 渲染，不请求在线 CDN；
+    流程图描述智能客服的意图分流与人工兜底，ER 图描述用户、会话、消息、意图、知识库、工单与评价之间的关联。
+  </div>
+
+  <section class="wan_card">
+    <div class="wan_cardHead">
+      <div>
+        <h2>一、系统流程图</h2>
+        <p>用户请求 → API 网关 → 会话服务 → 意图识别 → 业务系统 / 知识库 / 人工客服 → 回复审核 → 归档</p>
+      </div>
+      <span class="wan_chip">flowchart TD</span>
+    </div>
+    <div class="wan_diagram wan_diagram--flow" id="wan_flow">
+      <span class="wan_loading">流程图渲染中…</span>
+    </div>
+    <details class="wan_code">
+      <summary>查看 Mermaid 定义（flowchart）</summary>
+      <pre id="wan_flowCode"></pre>
+    </details>
+  </section>
+
+  <section class="wan_card">
+    <div class="wan_cardHead">
+      <div>
+        <h2>二、数据模型 ER 图</h2>
+        <p>用户 1—N 会话，会话 1—N 消息，消息命中意图，意图关联知识库片段，会话可转工单与评价</p>
+      </div>
+      <span class="wan_chip">erDiagram</span>
+    </div>
+    <div class="wan_diagram wan_diagram--er" id="wan_er">
+      <span class="wan_loading">ER 图渲染中…</span>
+    </div>
+    <details class="wan_code">
+      <summary>查看 Mermaid 定义（erDiagram）</summary>
+      <pre id="wan_erCode"></pre>
+    </details>
+  </section>
+
+  <footer class="wan_foot">
+    <span>万逸泽 · 24001010412 · 高级网页设计 I</span>
+    <span><a href="index.html">返回首页</a> · <a href="18-7.html">下一节 18-7 Three.js 图表</a></span>
+  </footer>
+</div>
+
+<script src="cdn/mermaid/mermaid.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var wan_flowDef = [
+    'flowchart TD',
+    '  A["用户<br/>网页 · App · 小程序"] --> B["API 网关<br/>鉴权 · 限流 · 日志"]',
+    '  B --> C["会话服务<br/>创建会话 · 维护上下文"]',
+    '  C --> D{"意图识别<br/>分类 + 置信度"}',
+    '  D -->|"订单 / 物流"| E["业务系统<br/>订单 · 物流 · 退款"]',
+    '  D -->|"产品咨询"| F["知识库检索<br/>切分 · 向量化 · Top-K"]',
+    '  D -->|"投诉 / 低置信度"| G["人工客服<br/>创建工单 · 转接"]',
+    '  F --> H["LLM 生成<br/>上下文 + 提示词"]',
+    '  E --> H',
+    '  G --> I["人工回复"]',
+    '  H --> J["回复审核<br/>敏感词 · 事实校验"]',
+    '  I --> J',
+    '  J --> K["返回用户<br/>流式输出"]',
+    '  K --> L["满意度评价"]',
+    '  K --> M[("MySQL<br/>会话 · 消息 · 工单")]',
+    '  L --> M',
+    '  classDef start fill:#0e7490,stroke:#22d3ee,color:#e0f2fe;',
+    '  classDef judge fill:#7c2d12,stroke:#fb923c,color:#ffedd5;',
+    '  classDef ai fill:#4c1d95,stroke:#a78bfa,color:#ede9fe;',
+    '  classDef human fill:#164e63,stroke:#38bdf8,color:#e0f2fe;',
+    '  classDef store fill:#064e3b,stroke:#34d399,color:#d1fae5;',
+    '  class A,B,C,E,K,L start;',
+    '  class D judge;',
+    '  class F,H,J ai;',
+    '  class G,I human;',
+    '  class M store;'
+  ].join('\n');
+
+  var wan_erDef = [
+    'erDiagram',
+    '  WAN_USER ||--o{ WAN_SESSION : "发起"',
+    '  WAN_SESSION ||--o{ WAN_MESSAGE : "包含"',
+    '  WAN_SESSION ||--o| WAN_TICKET : "转人工"',
+    '  WAN_MESSAGE }o--|| WAN_INTENT : "命中"',
+    '  WAN_INTENT ||--o{ WAN_KNOWLEDGE_DOC : "检索"',
+    '  WAN_SESSION ||--o| WAN_FEEDBACK : "评价"',
+    '',
+    '  WAN_USER {',
+    '    bigint wan_id PK "用户主键"',
+    '    varchar wan_name "昵称"',
+    '    varchar wan_phone "手机号"',
+    '    datetime wan_created_at "注册时间"',
+    '  }',
+    '  WAN_SESSION {',
+    '    bigint wan_id PK "会话主键"',
+    '    bigint wan_user_id FK "所属用户"',
+    '    varchar wan_channel "渠道 web/app/wechat"',
+    '    varchar wan_status "active/closed"',
+    '    datetime wan_started_at "开始时间"',
+    '  }',
+    '  WAN_MESSAGE {',
+    '    bigint wan_id PK "消息主键"',
+    '    bigint wan_session_id FK "所属会话"',
+    '    varchar wan_role "user/assistant/agent"',
+    '    text wan_content "消息内容"',
+    '    int wan_tokens "Token 用量"',
+    '    datetime wan_created_at "发送时间"',
+    '  }',
+    '  WAN_INTENT {',
+    '    bigint wan_id PK "意图主键"',
+    '    varchar wan_code "意图编码"',
+    '    varchar wan_name "意图名称"',
+    '    decimal wan_confidence "置信度"',
+    '  }',
+    '  WAN_KNOWLEDGE_DOC {',
+    '    bigint wan_id PK "片段主键"',
+    '    varchar wan_title "文档标题"',
+    '    varchar wan_chunk "片段编号"',
+    '    text wan_content "片段内容"',
+    '    varchar wan_embedding_id "向量 ID"',
+    '  }',
+    '  WAN_TICKET {',
+    '    bigint wan_id PK "工单主键"',
+    '    bigint wan_session_id FK "关联会话"',
+    '    varchar wan_status "pending/processing/done"',
+    '    varchar wan_assignee "处理人"',
+    '    datetime wan_created_at "创建时间"',
+    '  }',
+    '  WAN_FEEDBACK {',
+    '    bigint wan_id PK "评价主键"',
+    '    bigint wan_session_id FK "关联会话"',
+    '    tinyint wan_score "1-5 分"',
+    '    varchar wan_comment "评价内容"',
+    '  }'
+  ].join('\n');
+
+  document.getElementById('wan_flowCode').textContent = wan_flowDef;
+  document.getElementById('wan_erCode').textContent = wan_erDef;
+
+  function wan_showError(wan_target, wan_message) {
+    wan_target.innerHTML = '<div class="wan_error">图形渲染失败：' + wan_message +
+      '<br>请确认 cdn/mermaid/mermaid.min.js 是否存在，并通过本地 HTTP 服务或直接双击打开页面。</div>';
+  }
+
+  if (!window.mermaid) {
+    wan_showError(document.getElementById('wan_flow'), '未加载到 Mermaid');
+    wan_showError(document.getElementById('wan_er'), '未加载到 Mermaid');
+    console.error('[18-6] mermaid 未加载，请检查 cdn/mermaid/mermaid.min.js');
+    return;
+  }
+
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    securityLevel: 'loose',
+    fontFamily: '"PingFang SC", "Microsoft YaHei", sans-serif',
+    themeVariables: {
+      background: '#081426',
+      primaryColor: '#0b2a45',
+      primaryTextColor: '#e6f1ff',
+      primaryBorderColor: '#38bdf8',
+      lineColor: '#5b8db8',
+      secondaryColor: '#132f4d',
+      tertiaryColor: '#0a1c30',
+      fontSize: '14px',
+      attributeBackgroundColorOdd: '#0c1f33',
+      attributeBackgroundColorEven: '#0a1929'
+    },
+    flowchart: { curve: 'basis', htmlLabels: true, padding: 14 },
+    er: { diagramPadding: 24, layoutDirection: 'TB', minEntityWidth: 120 }
+  });
+
+  function wan_render(wan_id, wan_def, wan_targetId, wan_label) {
+    var wan_target = document.getElementById(wan_targetId);
+    wan_target.innerHTML = '<span class="wan_loading">' + wan_label + '渲染中…</span>';
+
+    mermaid.render(wan_id, wan_def).then(function (wan_result) {
+      wan_target.innerHTML = wan_result.svg;
+      var wan_svg = wan_target.querySelector('svg');
+      if (wan_svg) {
+        wan_svg.removeAttribute('height');
+        wan_svg.style.height = 'auto';
+      }
+      console.log('[18-6] ' + wan_label + '渲染完成');
+    }).catch(function (wan_err) {
+      console.error('[18-6] ' + wan_label + '渲染失败', wan_err);
+      wan_showError(wan_target, wan_err.message || String(wan_err));
+    });
+  }
+
+  wan_render('wan_flow_svg', wan_flowDef, 'wan_flow', '流程图');
+  wan_render('wan_er_svg', wan_erDef, 'wan_er', 'ER 图');
+})();
+</script>
+</body>
+</html>
